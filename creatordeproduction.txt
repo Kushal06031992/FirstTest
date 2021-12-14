@@ -1,0 +1,2686 @@
++++++++++++++++++++++++++++++++++++++++++++++++++++ Component _++++++++++++++++++++++++++
+
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickActionWithoutHeader" access="global" controller="CreateOrderController">
+    
+    <aura:html tag="style">
+        .slds-modal__container{
+        height : auto; width: 50%; max-width: 70%;
+        overflow: initial;
+        
+        }
+        .modal-body{
+        height : 80% !important;
+        max-height: 85vh !important;
+        padding: 0%;
+        }
+        .slds-modal__footer{
+        display: inline !important;
+        }
+        .last{
+        text-align: left;
+        vertical-align: middle;
+        }
+        
+        
+    </aura:html>
+    
+    
+    <!--Added by Kloudrac-->
+    <ltng:require styles="{!$Resource.multilineToastCSS}" />
+    <aura:attribute name="FileDataNew" type="List"/>
+    <aura:attribute name="FileId" type="string"/>
+    <!-- Attribute Added By Kloudrac-->
+    <aura:attribute name="BillableAgency" type="Boolean" default="false" />
+    <aura:attribute name="BillableAdvertiser" type="Boolean" default="false" />
+    <aura:attribute name="AgencyExist" type="Boolean" default="true" />
+    <aura:attribute name="IsSingleAdvertiser" type="Boolean" default="false" />
+    <aura:attribute name="IsSingleAgency" type="Boolean" default="false" />
+    <aura:attribute name="AdvertiserGSTName" type="String" />
+    <aura:attribute name="AgencyName" type="String"  />
+    <aura:handler event="c:ClearEvent" action="{!c.ClearDependentValue}" />
+    
+    
+    <!-- ============================================================ -->
+    <aura:attribute name="IsselfService" type="Boolean" default="false" />
+    <aura:attribute name="Spinner" type="Boolean" default="false" />
+    <aura:attribute name="readOnly" type="Boolean" default="false" />
+    <aura:attribute name="disabled" type="Boolean" default="false" />
+    <aura:attribute name="orderJSON" type="Object" />
+    <aura:attribute name="selItem1" type="Object" access="public" />
+    <aura:attribute name="selItem2" type="Object" access="public" />
+    <aura:attribute name="selItem3" type="Object" access="public" />
+    <aura:attribute name="selAccountItem1" type="String" access="public" />
+    <aura:attribute name="selAccountItem2" type="String" access="public" />
+    <aura:attribute name="selAccountItem3" type="String" access="public"/>
+    <aura:attribute name="expressoROId" type="String" />
+    <aura:attribute name="showOrNot" type="boolean" default="false"/>
+    <!--Added by Infogain-->
+    <aura:attribute name="Status" type="String" />
+    <aura:attribute name="AgencyBillable" type="String" />
+    <aura:attribute name="AgencyStatus" type="String" />
+    <aura:attribute name="ClientBillableType" type="String" />
+    <aura:attribute name="Contactcount" type="integer" />
+    <aura:attribute name="documentId" type="String" />
+    <aura:handler event="c:LookupEvent" action="{!c.handleApplicationEvent}" />
+    <aura:attribute name="contractId" type="String" />
+    <aura:attribute name="getAllFileInfo" type="string[]" />
+    <aura:attribute name="fileUploadedName" type="String" default = ""/>
+    <aura:attribute name="oldReffrenceId" type="string" default=""/>
+    <aura:attribute name="roReference" type="String" />
+    <aura:attribute name="fileData" type="object[]"/>
+    <!--<aura:attribute name="roReceivedDate" type="Date" />-->
+    <aura:attribute name="errorMessage" type="String" />
+    <aura:attribute name="error" type="Boolean" default="false"/>
+    <aura:attribute name="severity" type="String" default="error"  />
+    <aura:attribute name="DisableButton" type="Boolean" default="false"  />
+    <aura:handler name="render" value="{!this}" action="{!c.onRender}"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name = "ProfileName" type = "string" />
+    
+    <!--<aura:attribute name = "optyName" type="String" />
+    <aura:attribute name = "advertiserGST" type="String" />
+    <aura:attribute name = "agencyGST" type="String" />
+    <aura:attribute name = "billableGST" type="String" />
+    <aura:attribute name = "contractId" type="String" />
+    <aura:attribute name = "expressoId" type="String" />-->
+    <div class="modal-header slds-modal__header">
+        <h2 class="title slds-text-heading--medium" >Create Order</h2>
+    </div>
+    
+    <div class="slds-modal__content slds-p-around_medium slds-p-top_medium" id="modal-content-id-1">  
+        <div  style="height:100%;  padding: 0%;" >
+            <aura:if isTrue="{!v.error}">
+                <ui:message title="Error" severity="{!v.severity}" closable="true">
+                    <!--{!$Label.c.Pre_Error_Message}-->{!v.errorMessage}{!$Label.c.Post_Error_Message}
+                </ui:message>
+            </aura:if>
+            
+            <aura:if isTrue="{!v.Spinner}">
+                <div aura:id="spinnerId" class="slds-spinner_container">
+                    <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                        <span class="slds-assistive-text">Loading</span>
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </aura:if>
+            <div class="slds-grid slds-wrap">
+                <div class="slds-size--1-of-3 labels">Opportunity Name : </div>
+                <div class="slds-size--2-of-3 labelvalue">
+                    <ui:outputText value="{!v.orderJSON.optyName}" />
+                </div>
+            </div>
+            <br />
+            <aura:if isTrue="{!v.IsselfService}">
+                <aura:if isTrue="{!v.readOnly}">
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Contract Id : </div>
+                        <div class="slds-size--2-of-3 labelvalue">
+                            <ui:outputText value="{!v.orderJSON.contractId}" />
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels"> Billable GST Name : </div>
+                        <div class="slds-size--2-of-3 labelvalue">
+                            <a href="{!'/one/one.app?#/sObject/'+ !v.orderJSON.billableGST + '/view'}" target="_blank">
+                                <ui:outputText value="{!v.orderJSON.billableGSTName}" />
+                            </a>
+                        </div>
+                    </div>
+                </aura:if>
+                <aura:if isTrue="{!!v.readOnly}">
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Contract Id </div>
+                        <div class="slds-size--2-of-3">
+                            <lightning:input name="contractId" value="{!v.contractId}" aura:id="contractId" />
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Billable GST Name: </div>
+                        <div class="slds-size--2-of-3" aura:id="billableGST">
+                            <c:Lookup objectName="Account" field_API_text="Name" field_API_val="Id" limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem3}" placeholder="Enter space after text to search Accounts" LookupComponentNumber="3" ParentId1="{!v.orderJSON.advertiser}" ParentId2="{!v.orderJSON.agency}" />
+                        </div>
+                    </div>
+                    <br />
+                    <br />
+                    <div class="slds-align_absolute-center">
+                        <lightning:button variant="brand" label="Proceed" onclick="{!c.handleSave }" />
+                    </div>
+                </aura:if>
+            </aura:if>
+            <aura:if isTrue="{!!v.IsselfService}">
+                
+                <aura:if isTrue="{!v.readOnly}">
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Expresso Order Id : </div>
+                        <div class="slds-size--2-of-3 labelvalue">
+                            <ui:outputText value="{!v.orderJSON.expressoId}" />
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels"> Billable GST Name : </div>
+                        <div class="slds-size--2-of-3 labelvalue">
+                            <a href="{!'/one/one.app?#/sObject/'+ !v.orderJSON.billableGST + '/view'}" target="_blank">
+                                <ui:outputText value="{!v.orderJSON.billableGSTName}" />
+                            </a>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Agency GST Name : </div>
+                        <div class="slds-size--2-of-3 labelvalue">
+                            <a href="{!'/one/one.app?#/sObject/'+ !v.orderJSON.agencyGST + '/view'}" target="_blank">
+                                <ui:outputText value="{!v.orderJSON.agencyGSTName}" />
+                            </a>
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Advertiser GST Name : </div>
+                        <div class="slds-size--2-of-3 labelvalue">
+                            <a href="{!'/one/one.app?#/sObject/'+ !v.orderJSON.advertiserGST + '/view'}" target="_blank">
+                                <ui:outputText value="{!v.orderJSON.advertiserGSTName}" />
+                            </a>
+                        </div>
+                    </div>
+                    <br />
+                    
+                    <div class="slds-size--1-of-3 labels"> Ro Reference : </div>
+                    <div class="slds-size--2-of-3 labelvalue">
+                        <ui:outputText value="{!v.orderJSON.roRef}" />
+                    </div>
+                    <br />
+                    <!--<div class="slds-size- -1-of-3 labels"> Ro Received Date: </div>
+            <div class="slds-size- -2-of-3 labelvalue">
+                <ui:outputText value="{!v.orderJSON.roReceivedDate}" />
+             </div>
+            <br />-->
+                    <div class="slds-size--1-of-3 labels"> Order Document Uploaded : </div>
+                    <div class="slds-size--2-of-3 labelvalue">
+                        <a href="" target="_blank" onclick="{!c.openSingleFile}">
+                            <ui:outputText value="{!v.orderJSON.uploadTitle}" />
+                        </a>
+                    </div>
+                </aura:if>
+                <div class="slds-grid slds-wrap">
+                    <div class="slds-size--1-of-3 labels">Billable GST Name : </div>
+                    <div class="slds-size--2-of-3" aura:id="billableGST">
+                        <!--kloudra change start(05/26/2019)==================================== -->
+                        <aura:if isTrue="{!v.orderJSON.agency}">
+                            <!--Agency Is There: {!v.orderJSON.agency}-->
+                            <aura:if isTrue="{!v.BillableAgency}">
+                                <!-- Billable -->
+                                <!--case 3 --> <c:Lookup aura:id="lookupBillingGstId" objectName="Account" field_API_text="Name" field_API_val="Id"  limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem3}" placeholder="Enter space after text to search Accounts" LookupComponentNumber="8" ParentId1="{!v.orderJSON.advertiser}" ParentId2="{!v.orderJSON.agency}" dependentId = "lookupAdvertiserId" lookUpId="lookupBillingGstId"/>
+                                <aura:set  attribute="else"  >
+                                    <!-- Non Billable Agency(from static account only) -->
+                                    <!--case 4-->  <c:Lookup aura:id="lookupBillingGstId" objectName="Account" field_API_text="Name" field_API_val="Id"  limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem3}" placeholder="Enter space after text to search Accounts" LookupComponentNumber="6" ParentId1="{!v.orderJSON.advertiser}" ParentId2="{!v.orderJSON.agency}" dependentId= "lookupAdvertiserId" lookUpId="lookupBillingGstId"/>
+                                </aura:set>
+                            </aura:if>
+                            <aura:set  attribute="else"  >
+                                <!--Agency Is Empty: {!v.orderJSON.agency}-->
+                                <!--=====================changed By Kloudrac if Agency is selectd not selected on Opportunity
+                      removed condition: disable = true and replaced text field from lookup  -->
+                                <aura:if isTrue="{!v.BillableAdvertiser}">
+                                    <!--case 2 --> <c:Lookup aura:id="lookupBillingGstId" objectName="Account" field_API_text="Name" field_API_val="Id"  limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem3}" placeholder="Enter space after text to search Accounts" LookupComponentNumber="9" ParentId1="{!v.orderJSON.advertiser}" ParentId2="{!v.orderJSON.agency}" dependentId = "lookupAdvertiserId" lookUpId="lookupBillingGstId"/>
+                                    <aura:set  attribute="else"  >
+                                        <!--case 1 -->
+                                        <c:Lookup  aura:id="lookupBillingGstId" objectName="Account" field_API_text="Name" field_API_val="Id"  limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem3}" placeholder="Enter space after text to search Accounts" LookupComponentNumber="6" ParentId1="{!v.orderJSON.advertiser}" ParentId2="{!v.orderJSON.agency}" dependentId = "lookupAdvertiserId" lookUpId="lookupBillingGstId"/>
+                                    </aura:set>
+                                </aura:if>
+                            </aura:set>
+                        </aura:if>
+                    </div>
+                </div>
+                <br />
+                <aura:if isTrue="{!!v.readOnly}">
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Agency GST Name : </div>
+                        <div class="slds-size--2-of-3" aura:id="agencyGST">
+                            <!-- =====================changed By Kloudrac if Agency is selectd on Opportunity -->
+                            <aura:if isTrue="{!v.orderJSON.agency}">
+                                <!--Agency Is There: {!v.orderJSON.agency}-->
+                                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right">
+                                    <div>
+                                        <aura:if isTrue="{! empty(v.AgencyName) }">
+                                            <!--Multiple Agency -->
+                                            <c:Lookup aura:id = "AgencyGSTId" objectName="Account" field_API_text="Name"  field_API_val="Id" limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem2}" placeholder="Enter space after text to search Accounts" LookupComponentNumber="7" ParentId2="{!v.orderJSON.agency}" dependentId = "lookupBillingGstId" lookUpId="AgencyGSTId"/>
+                                            <aura:set attribute="else">
+                                                <span class="slds-pill slds-pill_link fullWidth">
+                                                    <a href="javascript:void(0);"
+                                                       class="slds-pill__action slds-p-left_x-small" title="{#v.selItem.text}">
+                                                        <lightning:icon iconName="{#v.lookupIcon}" size="x-small"/>
+                                                        <span class="slds-pill__label slds-p-left_x-small">{!v.AgencyName}</span>
+                                                    </a>
+                                                    <button onclick="{!c.clearSelection2}" class="slds-button slds-button_icon slds-button_icon slds-pill__remove" title="Remove" >
+                                                        <lightning:icon iconName="utility:close" size="small" alternativeText="Press delete or backspace to remove" />
+                                                        <span class="slds-assistive-text">Remove</span>
+                                                    </button>
+                                                </span>
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </div>
+                                <aura:set  attribute="else"  >
+                                    <!--Agency Is Empty: {!v.orderJSON.agency}-->
+                                    <input  type="text" class="slds-input slds-combobox__input" aria-activedescendant="listbox-option-unique-id-01" aria-autocomplete="list" aria-controls="listbox-unique-id" autocomplete="off" role="combobox"   disabled = "true"/>
+                                </aura:set>
+                            </aura:if>
+                            <!--==========================kloudrac change end============================= -->
+                        </div>
+                    </div>
+                    <br />
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Advertiser GST Name : </div>
+                        <div class="slds-size--2-of-3" aura:id="advertiserGST">  
+                            <!-- ===changed By kloudrac(05/24/2019) - check advertiser is single or not=====-->
+                            <aura:if isTrue="{!v.IsSingleAdvertiser}">
+                                <!-- single advertiser -->
+                                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right">
+                                    <div>
+                                        <aura:if isTrue="{! empty(v.AdvertiserGSTName) }">
+                                            <c:Lookup  aura:id = "lookupAdvertiserId" objectName="Account" field_API_text="Name"  field_API_val="Id"  limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem1}" placeholder="Enter space after text to search Accounts" optyId = "{!v.recordId}" LookupComponentNumber="5" ParentId1="{!v.orderJSON.advertiser}" dependentId = "lookupBillingGstId" lookUpId="lookupAdvertiserId"/>
+                                            <aura:set attribute="else">
+                                                <span class="slds-pill slds-pill_link fullWidth">
+                                                    <a href="javascript:void(0);"
+                                                       class="slds-pill__action slds-p-left_x-small" title="{#v.selItem.text}">
+                                                        <lightning:icon iconName="{#v.lookupIcon}" size="x-small"/>
+                                                        <span class="slds-pill__label slds-p-left_x-small">{!v.AdvertiserGSTName}</span>
+                                                    </a>
+                                                    <button onclick="{!c.clearSelection1}" class="slds-button slds-button_icon slds-button_icon slds-pill__remove" title="Remove" >
+                                                        <lightning:icon iconName="utility:close" size="small" alternativeText="Press delete or backspace to remove" />
+                                                        <span class="slds-assistive-text">Remove</span>
+                                                    </button>
+                                                </span>
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                </div>
+                                <aura:set  attribute="else"  >
+                                    <!-- multiple Advertiser-->
+                                    <c:Lookup  aura:id = "lookupAdvertiserId" objectName="Account" field_API_text="Name"  field_API_val="Id"  limit="25" field_API_search="Name" lookupIcon="standard:account" selItem="{!v.selItem1}" placeholder="Enter space after text to search Accounts" optyId = "{!v.recordId}" LookupComponentNumber="5" ParentId1="{!v.orderJSON.advertiser}" dependentId = "lookupBillingGstId" lookUpId="lookupAdvertiserId"/>
+                                </aura:set>
+                            </aura:if>
+                            <!-- ===kloudrac change end=====-->
+                        </div>
+                    </div>
+                    <br />
+                    
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-size--1-of-3 labels">Ro Ref Number : </div>
+                        <div class="slds-size--2-of-3" aura:id="billableGST">
+                            <lightning:input type="text" variant="label-hidden"  value="{!v.roReference}" placeholder="Enter Ro Ref Number" aria-activedescendant="listbox-option-unique-id-01" aria-autocomplete="list" aria-controls="listbox-unique-id" autocomplete="off" role="combobox"/>
+                        </div>
+                    </div>
+                    <!--<br />
+            <div class="slds-grid slds-wrap">
+                <div class="slds-size- -1-of-3 labels">Ro Received Date: </div>
+                <div class="slds-size- -2-of-3" aura:id="billableGST">
+                    <lightning:input type="Date" variant="label-hidden"  value="{!v.roReceivedDate}" aria-activedescendant="listbox-option-unique-id-01" aria-autocomplete="list" aria-controls="listbox-unique-id" autocomplete="off" role="combobox"/>
+                </div>
+            </div>
+            -->
+                    
+                    <div class="slds-grid slds-grid--pull-padded">
+                        <div class="slds-col--padded">
+                            <lightning:input name="File Uplode" type="file" multiple="false" accept=".pdf, .png, .jpg"  onchange="{!c.handleUploadFinished1}" /> 
+                         
+                            <!--<lightning:fileUpload name="fileUploader" multiple="false" accept=".pdf, .png, .jpg" recordId="{!v.recordId}" aura:id="multipleUpload" disabled="{!v.disabled}" onuploadfinished="{!c.handleUploadFinished}" />-->
+                        </div>
+                        <aura:if isTrue="{!v.showOrNot}">
+                            <div class="slds-col--padded">
+                                <!--<lightning:combobox  name="Recived Files" label="Recived Files" placeholder="Select Files Name" options="{! v.FileData }" onchange="{!c.getFileId}" />-->
+                                <lightning:select aura:id="RelatedFiles" label="Recived File" onchange="{!c.getFileId}">
+                                    <option value="">--None--</option>
+                                    <aura:iteration items="{!v.FileDataNew}" var="pd">
+                                        <option  value="{!pd.value}"  ><strong>{!pd.label}</strong></option>                        
+                                    </aura:iteration>              
+                                </lightning:select>
+                            </div>
+                        </aura:if>
+                    </div>
+                    
+                    <aura:if isTrue="{!v.fileData}">
+                        <br />
+                        <aura:iteration items="{!v.fileData}" var="item" indexVar="index">
+                            <!-- <p style="color:red" >{!item.name}</p>-->
+                            <div class="slds-grid slds-wrap" >
+                                <div class="slds-box slds-theme_shade slds-theme_alert-texture slds-col--padded slds-size--1-of-2 slds-medium-size--1-of-1 slds-large-size--1-of-2">
+                                    <p>{!item.name}<a href="javascript:void(0);" class="slds-float_right" onclick="{!c.deleteAtt}" data-item="{!index}">
+                                        <lightning:icon iconName="utility:delete" alternativeText="delete" size="small" />
+                                        </a>
+                                        
+                                    </p>
+                                </div>
+                            </div>
+                        </aura:iteration>
+                    </aura:if>
+                    
+                </aura:if>
+            </aura:if>
+        </div>
+    </div>
+    <div class="slds-docked-form-footer slds-float_left">
+        <lightning:button class="slds-button slds-button_neutral slds-float_right slds-p-left_medium" onclick="{!c.closeQuickAction}">Cancel</lightning:button>
+        <lightning:button variant="brand" label="Proceed" onclick="{!c.handleSave }" disabled="{!v.DisableButton}"  />
+    </div>
+</aura:component>
+
++++++++++++++++++++++++++++++++++++++++++++++++++++ END +++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++= CreateorderController ++++++++++++++++++++++
+public class CreateOrderController {
+    
+    /**
+* Returns JSON of list of ResultWrapper to Lex Components
+* @objectName - Name of SObject
+* @fld_API_Text - API name of field to display to user while searching
+* @fld_API_Val - API name of field to be returned by Lookup COmponent
+* @lim   - Total number of record to be returned
+* @fld_API_Search - API name of field to be searched
+* @searchText - text to be searched
+* */
+    public static boolean stopdoubleEmail = true;
+    public static String iMId, optyId;
+    @AuraEnabled
+    public static String searchCondtionalDataInDB(String objectName, String fld_API_Text, String fld_API_Val,Integer lim,String fld_API_Search,String searchText, String parentId1, String parentId2, Integer interfaceNumber,String opportunityId){
+        System.debug('objectName: '+objectName);
+        System.debug('fld_API_Text: '+fld_API_Text);
+        System.debug('fld_API_Val: '+fld_API_Val);
+        System.debug('lim: '+lim);
+        System.debug('fld_API_Search: '+fld_API_Search);
+        System.debug('searchText: '+searchText);
+        System.debug('parentId1: '+parentId1);
+        System.debug('parentId2: '+parentId2);
+        System.debug('interfaceNumber: '+interfaceNumber);
+        System.debug('opportunityId: '+opportunityId);
+        //System.debug('opportunity: '+[Select id,Agency__c,account.Archived__c from Opportunity where id = :opportunityId ]);
+        
+        interfaceNumber = Integer.valueOf(interfaceNumber);
+        
+        String conditionInQuery = 'Status__c = \'Onboarded\' and Expresso_Id__c!=null and Archived__c=false ';
+        System.debug('conditionInQuery: '+conditionInQuery);
+        
+        if(interfaceNumber==1){
+            Opportunity opty = [Select id,Agency__c,account.Archived__c from Opportunity where id = :opportunityId ];
+            
+            if(String.isNotBlank(opty.Agency__c )){
+                //Has Agency
+                conditionInQuery += 'AND ( (Id = \''+parentId1+'\') OR (ParentId = \''+parentId1+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+            }
+            else{
+                //Is Advertiser
+                conditionInQuery += 'AND Client_Billable_Type__c IN (\'239\',\'238\') AND ((Id = \''+parentId1+'\') OR (ParentId = \''+parentId1+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+            }
+        }
+        else if(interfaceNumber==2)
+            conditionInQuery += 'AND Client_Billable_Type__c IN (\'239\',\'238\') AND ((Id = \''+parentId2+'\') OR (ParentId = \''+parentId2+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+        else if(interfaceNumber==3)
+            conditionInQuery += ' AND ((Id IN (\''+parentId1+'\',\''+parentId2+'\') AND Client_Billable_Type__c IN (\'239\',\'238\') ) OR Static_Account__c= true OR (ParentId  IN (\''+parentId1+'\',\''+parentId2+'\') AND Client_Billable_Type__c IN (\'239\',\'238\') AND RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+        else if(interfaceNumber==4)
+        {
+            conditionInQuery= 'til_user_id__c!= null';
+        }
+        //==========changed by Kloudrac softwares private limited(05/24/2019)
+        //case 1 and case 4:- for(Billable GST Name : static account only)
+        else if(interfaceNumber==6)
+        {
+            conditionInQuery += 'AND Static_Account__c= true';
+        }
+        //case 3 and 4:- for(Agency GST Name :)
+        else if(interfaceNumber==7)
+        {
+            conditionInQuery += 'AND ((Id = \''+parentId2+'\') OR (ParentId = \''+parentId2+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+        }
+        //case 3:- for(Billable GST Name :static account or agency billable)
+        else if(interfaceNumber==8)
+        {
+            conditionInQuery += ' AND (Static_Account__c= true OR (Id = \''+parentId2+'\') OR (ParentId = \''+parentId2+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+        }
+        //case 2:- for(Billable GST Name :static account or billable advertiser)
+        else if(interfaceNumber==9)
+        {
+            conditionInQuery += ' AND (Static_Account__c= true OR (Id = \''+parentId1+'\') OR (ParentId = \''+parentId1+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\')) ) ';
+        }
+        //for Advertiser GST Name
+        else if(interfaceNumber==5)
+        {
+            system.debug('interfaceNumber 5');
+            conditionInQuery += 'AND ((Id = \''+parentId1+'\') OR (ParentId = \''+parentId1+'\' AND RecordType.DeveloperName IN (\'Approved_GST_Entity\')) )';
+        }
+        //=============================kloudrac change end====================================================================
+        System.debug('conditionInQuery: '+conditionInQuery);
+        
+        /*if(interfaceNumber==1){
+Opportunity opty = [Select id,Agency__c from Opportunity where id = :opportunityId];
+
+if(String.isNotBlank(opty.Agency__c )){
+conditionInQuery += 'and ( (Id = \''+parentId1+'\') OR (ParentId = \''+parentId1+'\' and RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+}
+else{
+conditionInQuery += 'and ( (Id = \''+parentId1+'\' AND Client_Billable_Type__c IN (\'239\',\'238\')) OR (ParentId = \''+parentId1+'\' and RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';  
+}
+}
+else if(interfaceNumber==2)
+conditionInQuery += 'and ( (Id = \''+parentId2+'\' AND Client_Billable_Type__c IN (\'239\',\'238\')) OR (ParentId = \''+parentId2+'\' and RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+else if(interfaceNumber==3)
+conditionInQuery += 'and ( (Id IN (\''+parentId1+'\',\''+parentId2+'\')  AND Client_Billable_Type__c IN (\'239\',\'238\')) OR Static_Account__c= true OR (ParentId  IN (\''+parentId1+'\',\''+parentId2+'\') and RecordType.DeveloperName IN (\'Approved_GST_Entity\'))) ';
+System.debug('conditionInQuery: '+conditionInQuery);*/
+        
+        
+        
+        
+        
+        searchText='\'%' + String.escapeSingleQuotes(searchText.trim()) + '%\'';
+        String query;
+        /*  if(interfaceNumber==4){
+query = 'SELECT '+fld_API_Text+', '+fld_API_Val+
+' FROM '+objectName+
+' WHERE '+fld_API_Search+' LIKE '+searchText+' and '+conditionInQuery+
+' LIMIT '+lim;
+}
+else{*/
+        query = 'SELECT '+fld_API_Text+', '+fld_API_Val+
+            ',Custom_Lookup_Label__c FROM '+objectName+
+            ' WHERE '+fld_API_Search+' LIKE '+searchText+' and '+conditionInQuery+
+            ' LIMIT '+lim;
+        //  }
+        System.debug('query: '+query);
+        List<sObject> sobjList = Database.query(query);
+        system.debug('@@sobjList.size()' +sobjList.size());
+        List<ResultWrapper> lstRet = new List<ResultWrapper>();
+        
+        for(SObject s : sobjList){
+            ResultWrapper obj = new ResultWrapper();
+            obj.objName = objectName;
+            System.debug('heyy');
+            
+            obj.lookupValue = s.get('Custom_Lookup_Label__c') !=null ? String.valueOf(s.get('Custom_Lookup_Label__c')) : null;
+            System.debug('Badd'+obj.lookupValue);
+            obj.text = String.valueOf(s.get(fld_API_Text)) ;
+            obj.val = String.valueOf(s.get(fld_API_Val))  ;
+            lstRet.add(obj);
+        }
+        return JSON.serialize(lstRet) ;
+    }
+    @AuraEnabled
+    public static String searchCondtionalDataInDB(String objectName, String fld_API_Text, String fld_API_Val,Integer lim,String fld_API_Search,String searchText, String parentId1, String parentId2, Integer interfaceNumber){
+        return searchCondtionalDataInDB(objectName,fld_API_Text,fld_API_Val,lim,fld_API_Search,searchText,null,null,null,null);
+    }
+    @AuraEnabled
+    public static String searchDB(String objectName, String fld_API_Text, String fld_API_Val,
+                                  Integer lim,String fld_API_Search,String searchText){
+                                      return searchCondtionalDataInDB(objectName,fld_API_Text,fld_API_Val,lim,fld_API_Search,searchText,null,null,null,null);
+                                  }
+    
+    public class ResultWrapper{
+        public String objName {get;set;}
+        public String text{get;set;}
+        public String val{get;set;}
+        //Changes By Sidhant Start
+        public String lookupValue{get;set;}
+        //Changes By Sidhant End
+    }
+    
+    public class OrderDetails{
+        @AuraEnabled public Boolean verifiedOrder;
+        @AuraEnabled public String pitchedForSS;
+        @AuraEnabled public String optyName;
+        @AuraEnabled public String contractId;
+        @AuraEnabled public String expressoId;
+        @AuraEnabled public String advertiserGST;
+        @AuraEnabled public String agencyGST;
+        @AuraEnabled public String billableGST;
+        @AuraEnabled public String advertiserGSTName;
+        @AuraEnabled public String agencyGSTName;
+        @AuraEnabled public String billableGSTName;
+        @AuraEnabled public String expressoROId;
+        @AuraEnabled public String dealType;
+        @AuraEnabled public String optyId;
+        @AuraEnabled public Integer RO_PackagesCount;
+        @AuraEnabled public String stage;
+        @AuraEnabled public String experssoOrderId;
+        @AuraEnabled public String uploadTitle;
+        @AuraEnabled public String uploadId;
+        
+        //Sidhant Changes Start
+        @AuraEnabled public String roReceivedDate;
+        @AuraEnabled public String roRef;
+        @AuraEnabled public String agency;
+        @AuraEnabled public String advertiser;
+        // Added by Infogain
+        @AuraEnabled public String Status;
+        @AuraEnabled public String ClientBillableType;
+        @AuraEnabled public String AgencyStatus;
+        @AuraEnabled public String AgencyBillable;
+        //  @AuraEnabled public String AgencyName;
+        // Compro - 15th March 2019 START - Validation Error for Embargo Agency and Account
+        @AuraEnabled public String AgencyCommercialStatus;
+        @AuraEnabled public String AccountCommercialStatus;
+        // Compro - 15th March 2019 END
+        // Compro - 28th March 2019 START - For checking the ContactRole on opportunity
+        @AuraEnabled public Boolean checkContactRole;
+        // Compro - 28th March 2019 End
+        
+        
+        //Sidhant Changes End
+        //  kloudrac - 24 May 2019 START - For prefill single advertiser
+        @AuraEnabled public string AdvertiserName;
+        @AuraEnabled public string AgencyName;
+        @AuraEnabled public Boolean IsSingleAdvertiser;
+        @AuraEnabled public Boolean IsSingleAgency;
+        // kloudrac - 24 May 2019 End
+        public OrderDetails(){            
+            verifiedOrder = false;
+            pitchedForSS = '';
+            optyName = '';
+            contractId = '';
+            expressoId = '';
+            advertiserGST = '';
+            agencyGST = '';
+            billableGST = '';
+            advertiserGSTName = '';
+            agencyGSTName = '';
+            billableGSTName = '';
+            expressoROId = '';
+            dealType = '';
+            optyId = '';
+            RO_PackagesCount = 0;
+            stage = '';
+            experssoOrderId = '';
+            uploadTitle = '';
+            uploadId = '';
+            //Sidhant Changes Start
+            agency = '';
+            advertiser = '';
+            roRef='';
+            roReceivedDate=null;
+            // Added by Infogain
+            Status='';
+            ClientBillableType='';
+            AgencyStatus='';
+            AgencyBillable='';
+            //Sidhant Changes End
+            //Shreya Changes Start
+            checkContactRole = true;  
+            //Shreya changes End
+            //kloudrac change start
+            AgencyName = '';
+            AdvertiserName = '';
+            IsSingleAdvertiser = false;
+            IsSingleAgency = false;
+            //kloudrac change end
+        }
+    }
+    //  Compro - 28th March 2019 - Checks if there is any Contact Role related to an Opportunity
+    
+    
+    @AuraEnabled
+    public static Boolean isValidForContactRoles(String recordId){
+        
+        List<OpportunityContactRole> contactRole =  [Select Id from OpportunityContactRole where OpportunityId =: recordId ];
+        if(contactRole.size() > 0)
+        {
+            System.debug('Size of the Contact Roles =' +contactRole.size());
+            return true;
+        }
+        return false;
+    }
+    
+    @AuraEnabled
+    public static OrderDetails fetchOrderDetails(String recordId) {
+        OrderDetails od = new OrderDetails();
+        if(String.isNotBlank(recordId)){
+            //Orginal  Opportunity opp = [Select Id, StageName ,Name, VerifiedOrder__c, Pitched_For_SS__c, Contract_Id__c, Expresso_Order_Id__c, Advertiser_GST_Entity__c,Advertiser_GST_Entity__r.Name ,Agency_GST_Entity__c,Agency_GST_Entity__r.Name ,Billable_GST_Entity__c ,Billable_GST_Entity__r.Name ,Expresso_RO_Id__c ,Deal_Type__c ,(Select id from RO_Packages__r) from Opportunity where Id = :recordId];
+            
+            //Sidhant Changes Start
+            //Anant 28 June - commenting this query as RO Package is incorrect and RO_Reference__c RO Reference is not there
+            //Opportunity opp = [Select Id,Spotlight_Deal__c,Spotlight_Approval_Status__c,Discount_Approval_Status__c,AccountId,Agency__c,Agency_Parent_Id__c,Advt_Parent_Id__c,StageName ,Name, VerifiedOrder__c, Pitched_For_SS__c, Contract_Id__c, Expresso_Order_Id__c, Advertiser_GST_Entity__c,Advertiser_GST_Entity__r.Name ,Agency_GST_Entity__c,Agency_GST_Entity__r.Name ,Billable_GST_Entity__c ,Billable_GST_Entity__r.Name ,Expresso_RO_Id__c ,Deal_Type__c ,(Select id from RO_Packages__r) from Opportunity where Id = :recordId];
+            
+            // Anant 28 June - Adding Ro Reference and renaming the RO Package to Rate Cards
+            // Added by Infogain
+            //  Compro - 15th March 2019 - ADDED , Agency__r.Commercial_Status__c, Account.Commercial_Status__c, in the query FOR EMBARGO changes
+            Opportunity opp = [Select Id,Account.Name,Is_Spotlight__c,Agency__r.Client_Billable_Type__c,Agency__r.Name,Agency__r.Status__c,account.Status__c,account.Client_Billable_Type__c,Spotlight_Deal__c,
+                               RO_Received_Date__c,RO_Reference__c,Spotlight_Approval_Status__c,Discount_Approval_Status__c,AccountId,Agency__c,Agency_Parent_Id__c,
+                               Advt_Parent_Id__c,StageName ,Name, VerifiedOrder__c, Pitched_For_SS__c, Contract_Id__c, Expresso_Order_Id__c, Advertiser_GST_Entity__c,
+                               Advertiser_GST_Entity__r.Name ,Agency_GST_Entity__c,Agency_GST_Entity__r.Name ,Billable_GST_Entity__c ,Billable_GST_Entity__r.Name ,
+                               Expresso_RO_Id__c ,Deal_Type__c , Agency__r.Commercial_Status__c, Account.Commercial_Status__c,
+                               (Select id from Rate_Cards__r WHERE Status__c = '1' OR Status__c ='Active') from Opportunity where Id = :recordId];
+            
+            
+            Set<String> discountApprovalSet = new Set<String>{'Approved','Approval Not Required'};
+                if(!discountApprovalSet.contains(opp.Discount_Approval_Status__c)){
+                    throw new AuraHandledException('Discount Approval Status is '+opp.Discount_Approval_Status__c+', Cannot Create Order');
+                }
+            Set<String> spotLightDealApprovalSet = new Set<String>{'Approved','Not Submitted','Rejected'};
+                if(opp.Spotlight_Deal__c && !spotLightDealApprovalSet.contains(opp.Spotlight_Approval_Status__c)){
+                    throw new AuraHandledException('SpotLight deal Status is '+opp.Spotlight_Approval_Status__c+', Cannot Create Order');
+                }
+            //Sidhant Changes End
+            List<ContentDocumentLink> conList = new List<ContentDocumentLink>([Select ContentDocument.title, LinkedEntityId, ContentDocumentId from ContentDocumentLink WHERE LinkedEntityId= :opp.Id]);
+            
+            Set<String> conDocLinkSet = new Set<String>();
+            
+            for(ContentDocumentLink con : conList){
+                conDocLinkSet.add(con.ContentDocumentId);
+            }
+            
+            List<ContentVersion> conVerList = new List<ContentVersion>([Select title, IsLatest, ContentModifiedDate from ContentVersion WHERE ContentDocumentId in :conDocLinkSet and IsLatest = true and IsMostRecent__c = true order by ContentModifiedDate desc]);
+            
+            if(opp != null){
+                //Sidhant Changes Start
+                od.agency = String.isNotBlank(opp.Agency_Parent_Id__c)?opp.Agency_Parent_Id__c:'';//Agency__c;
+                od.advertiser = String.isNotBlank(opp.Advt_Parent_Id__c)?opp.Advt_Parent_Id__c:'';//AccountId;
+                system.debug('od.agency: ' +od.agency);
+                system.debug('od.advertiser: ' +od.advertiser);
+                //kloudrac change start
+                if(od.agency!=null && od.agency!='')
+                {
+                    List<account> lstAccount = [select Id,Name from Account where ParentId =:od.agency And RecordType.Name =: 'Approved GST Entity'];
+                    system.debug('@@@@lstAccount Agency---->' +lstAccount);
+                    if(lstAccount!=null & lstAccount.size()>0)
+                        od.IsSingleAgency = false;
+                    else
+                    {
+                        od.IsSingleAgency = true;
+                        od.AgencyName = opp.Agency__r.Name;
+                    }
+                }
+                if(od.advertiser!=null && od.advertiser!='')
+                {
+                    List<account> lstAccount = [select Id,Name from Account where ParentId =:od.advertiser And RecordType.Name =: 'Approved GST Entity'];
+                    system.debug('@@@@lstAccount Advertiser---->' +lstAccount);
+                    if(lstAccount!=null & lstAccount.size()>0)
+                        od.IsSingleAdvertiser = false;
+                    else
+                    {
+                        od.IsSingleAdvertiser = true;
+                        od.AdvertiserName = opp.Account.Name;
+                    }
+                }
+                od.roRef = opp.RO_Reference__c;
+                od.roReceivedDate =  opp.RO_Received_Date__c!=null?opp.RO_Received_Date__c.format():null;
+                //Sidhant Changes End
+                od.verifiedOrder = opp.VerifiedOrder__c;
+                od.pitchedForSS = opp.Pitched_For_SS__c;
+                od.optyName = opp.Name;
+                od.contractId = opp.Contract_Id__c;
+                od.expressoId = opp.Expresso_Order_Id__c;
+                od.advertiserGST = opp.Advertiser_GST_Entity__c;
+                od.agencyGST = opp.Agency_GST_Entity__c;
+                od.billableGST = opp.Billable_GST_Entity__c;
+                od.advertiserGSTName = opp.Advertiser_GST_Entity__r.Name;
+                od.agencyGSTName = opp.Agency_GST_Entity__r.Name;
+                od.billableGSTName = opp.Billable_GST_Entity__r.Name;  
+                od.expressoROId = opp.Expresso_RO_Id__c;
+                od.dealType = opp.Deal_Type__c;//not in use Pallavi 14 June KT
+                od.optyId = opp.Id;
+                //od.RO_PackagesCount = opp.RO_Packages__r.size(); // Commented by Anant 28 June to replace RO PAckage with Rate Cards
+                od.RO_PackagesCount = opp.Rate_Cards__r.size();
+                od.stage = opp.StageName;
+                od.experssoOrderId = opp.Expresso_Order_Id__c;
+                // Added by Infogain
+                od.Status=opp.account.Status__c;
+                od.AgencyStatus=opp.Agency__r.Status__c;
+                od.ClientBillableType=opp.account.Client_Billable_Type__c;
+                od.AgencyBillable=opp.Agency__r.Client_Billable_Type__c;
+                
+                
+                if(conVerList.size()>0){
+                    od.uploadTitle = conVerList[0].title;
+                    od.uploadId = conList[0].ContentDocumentId;
+                }
+                // Compro - 15th March 2019 START - EMBARGO Changes
+                od.AgencyCommercialStatus = opp.Agency__r.Commercial_Status__c;
+                od.AccountCommercialStatus = opp.Account.Commercial_Status__c;
+                //// Compro - 15th March 2019 END - EMBARGO changes
+                
+                // Compro - 28th March 2019 START - Contact role Changes
+                /*if(opp.Is_Spotlight__c) Commented By Kloudrac Softwares (07/02/2019)
+{
+od.checkContactRole=isValidForContactRoles(recordId);
+}*/
+                od.checkContactRole=isValidForContactRoles(recordId);
+                // Compro - 28th March 2019 END - Contact role Changes
+            }                
+        }
+        
+        return od;
+    }
+    
+    public static HttpResponse generateToken() {
+        System.debug('***generateToken***');
+        IntegrationHelper ihelper = new IntegrationHelper();
+        ihelper.getErrorCodes();
+        Integration_Credential__mdt integrationCredential  = ihelper.getExpressoCredential();
+        HttpRequest request = new HttpRequest();
+        Http mHttp = new Http();
+        request.setMethod('POST');
+        request.setHeader('Content-Type', 'text/json;charset=UTF-8');
+        // String authHeader = integrationCredential.Client_Id__c+':'+integrationCredential.Client_Secret__c;
+        
+        //request.setHeader('Authorization', 'Basic '+EncodingUtil.base64Encode(Blob.valueOf(authHeader)));//c2FsZXNmb3JjZTpzZWNyZXQ=');
+        String endPoint = integrationCredential.End_Point__c+'grant_type='+integrationCredential.Grant_Type__c+
+            '&client_id='+integrationCredential.Client_Id__c+'&client_secret='+integrationCredential.Client_Secret__c+
+            '&username='+integrationCredential.Username__c+'&password='+integrationCredential.Password__c;
+        System.debug('endPoint: '+endPoint);
+        request.setEndpoint(endPoint);
+        request.setTimeout(10000);
+        HttpResponse response;
+        if(!Test.isRunningTest())
+            response = mHttp.send(request);
+        else
+            response = TestIntegrationHelper.httpmockresponse(request);
+        //HttpResponse response = mHttp.send(request);
+        System.debug('endPoint: '+endPoint);
+        System.debug('request.getstatuscode(): '+response.getstatuscode());
+        System.debug('response: '+response.getBody());
+        return response;
+    }
+    
+    public class Response{
+        
+        //Generic Response
+        public String success;
+        public String errorCode;
+        public String message;
+        public String error_description;
+        public String error;
+        
+    }
+    
+    public class SaveResultWrapper {    
+        @AuraEnabled public Boolean errorFlag {get;set;}
+        @AuraEnabled public String errorMessage {get;set;}
+        @AuraEnabled public String iMId {get;set;}
+        @AuraEnabled public String contractId {get;set;}
+        @AuraEnabled public String billableGST {get;set;}
+        
+        public SaveResultWrapper(){
+            this.errorFlag = false;
+            this.errorMessage = 'Records have been saved successfully!';
+            this.contractId = '';
+            this.billableGST = '';
+            this.iMId = '';
+        }
+    }
+    
+    @AuraEnabled
+    public static SaveResultWrapper saveDetails (String recordId ,String orderDetails) {  
+        System.debug('Save func'+orderDetails);
+        SaveResultWrapper wrp = new SaveResultWrapper();  
+        optyId = recordId;
+        OrderDetails orderDetail = (OrderDetails)System.JSON.deserialize(orderDetails, OrderDetails.class);
+        Opportunity optyRecord = new Opportunity();
+        optyRecord.Id = recordId;
+        if(orderDetail.pitchedForSS == '0'){//Create Order
+            //Sidhant Changes Start
+            system.debug('@@orderDetail.advertiserGST==>'+orderDetail.advertiserGST);
+            if(String.isNotBlank(orderDetail.advertiserGST))
+                optyRecord.Advertiser_GST_Entity__c = String.valueOf(orderDetail.advertiserGST);
+            if(String.isNotBlank(orderDetail.agencyGST))
+                optyRecord.Agency_GST_Entity__c = String.valueOf(orderDetail.agencyGST);
+            if(String.isNotBlank(orderDetail.billableGST))
+                optyRecord.Billable_GST_Entity__c = String.valueOf(orderDetail.billableGST);
+            if(String.isNotBlank(orderDetail.roRef))
+            {
+                optyRecord.RO_Reference__c = orderDetail.roRef;
+                boolean istrue = getFinalYearData(recordId,optyRecord.RO_Reference__c);
+                if(istrue)
+                {
+                    string billabelEntity = [select id,Billable_Entity__c,RO_Reference__c  from opportunity where id=:recordId limit 1].Billable_Entity__c;
+                    sendErrorMessageTousers(orderDetail.roRef, recordId,billabelEntity);
+                }
+            }
+            //if(String.isNotBlank(orderDetail.roReceivedDate))
+            //    optyRecord.RO_Received_Date__c = Date.valueOf(orderDetail.roReceivedDate);
+            ////Sidhant Changes End        
+            //
+            //    optyRecord.Advertiser_GST_Entity__c = String.valueOf(orderDetail.advertiserGST);
+            //    optyRecord.Agency_GST_Entity__c = String.valueOf(orderDetail.agencyGST);
+            //    optyRecord.Billable_GST_Entity__c = String.valueOf(orderDetail.billableGST);
+            
+        }else if(orderDetail.pitchedForSS == '1'){//Contract Validation
+            optyRecord.Contract_Id__c = String.valueOf(orderDetail.contractId);
+            optyRecord.Billable_GST_Entity__c = String.valueOf(orderDetail.billableGST);
+            wrp.contractId = String.valueOf(orderDetail.contractId);
+            wrp.billableGST = String.valueOf(orderDetail.billableGST);
+        }      
+        
+        System.debug('Pitched for SS:'+orderDetail.pitchedForSS);
+        System.debug('orderDetail.billableGST:'+orderDetail.billableGST);
+        //optyRecord.VerifiedOrder__c = true;        
+        
+        
+        
+        String str ;
+        try {
+            update optyRecord;
+            
+            wrp.errorFlag = false;
+            wrp.errorMessage = 'Order details have been saved successfully!';
+            str = 'Order details have been saved successfully';
+            System.debug('Save func1');            
+            
+        } catch (Exception e) {
+            str = 'SF says uploading failed'+ e.getMessage();
+            // System.debug(e.getMessage());
+            wrp.errorFlag = true;
+            wrp.errorMessage = 'Error saving Order details :'+e.getMessage()+' in Salesforce. Please try again.';
+        }
+        
+        if( wrp.errorFlag == false){
+            if(orderDetail.pitchedForSS == '0'){
+                System.debug('Save func3');
+                
+                try{
+                    Integration_Message__c im = new Integration_Message__c();      
+                    im.Opportunity__c = recordId;  
+                    
+                    im.Status__c = 'Not Processed';
+                    im.External_Id__c = recordId+'-'+im.Status__c;//Pallavi 14 June kt External id needs to be updated
+                    im.Operation__c = 'Expresso - Update';//Pallavi 14 June KT cREATE oRDER
+                    im.Object_Type__c = 'Opportunity';                
+                    upsert im External_Id__c;
+                    iMId = im.Id;
+                    wrp.iMId = iMId;
+                    System.debug('IM id:'+im.Id);          
+                    //}
+                }catch(Exception e){
+                    wrp.errorFlag = true;
+                    wrp.errorMessage = 'Error saving Order details in IM record :'+e.getMessage()+' in Salesforce. Please try again.';
+                }
+            }
+        }
+        
+        System.debug('Save func2'+wrp);
+        return wrp;
+    }
+    
+    @AuraEnabled
+    public static SaveResultWrapper handleExpressoValidation(String billableGST, String contractId, String optyId){
+        System.debug('Inside handleExpressoValidation');
+        SaveResultWrapper wrp = new SaveResultWrapper();
+        wrp.errorFlag = false;
+        wrp.errorMessage = 'Order details have been successfully validated from Expresso!';
+        
+        Account acc =[Select id ,Expresso_Id__c,Get_Current_Username__c from Account where id =:billableGST];
+        
+        HttpRequest request = new HttpRequest();
+        Http http = new Http();
+        HTTPResponse res;
+        try{
+            request.setMethod('GET');
+            request.setHeader('Content-Type', 'application/json');
+            request.setHeader('username', acc.Get_Current_Username__c);
+            //request.setBody(body);
+            Response responseWrapper;
+            Integration_Request_Template__mdt iRT = [select Object__c,Operation__c,End_Point__c,TimeOut__c from
+                                                     Integration_Request_Template__mdt WHERE Operation__c = 'Expresso - Validate' and Object__c='Opportunity'];
+            HttpResponse response = IntegrationHelper.generateToken();
+            IntegrationWrapper.GenerateToken wrapper =  (IntegrationWrapper.GenerateToken)JSON.deserialize(response.getBody(), IntegrationWrapper.GenerateToken.class);
+            if(String.isNotBlank(wrapper.token_type))
+                wrapper.access_token = wrapper.token_type+' '+wrapper.access_token;
+            if(response != null && acc!= null && String.isNotBlank(acc.Expresso_Id__c)){//url CONFIGURABLE //Pallavi 14 June KT
+                //request.setEndpoint('https://stgexpresso.colombiaonline.com/expresso/rest/api/validateContract.htm'+'?access_token='+wrapper.access_token+'&billableClientId='+acc.Expresso_Id__c+'&contractId='+contractId);
+                request.setEndpoint(iRT.End_Point__c+'?billableClientId='+acc.Expresso_Id__c+'&contractId='+contractId);
+                //'?access_token='+wrapper.access_token+
+                
+                request.setHeader('Authorization',wrapper.access_token);
+                request.setTimeout(Integer.valueOf(iRT.TimeOut__c));
+                
+                //Handling response
+                Http http1 = new Http();
+                System.debug('request body'+request.getBody());
+                System.debug('request url'+request.getEndpoint());
+                if(!Test.isRunningTest())
+                    res = http1.send(request);
+                else
+                    res = TestIntegrationHelper.httpmockresponse(request);
+                //res = http1.send(request);
+                System.debug('Response body'+res.getBody());
+                responseWrapper = (Response)JSON.deserialize(res.getBody(), Response.class);
+            }
+            
+            if(responseWrapper.success == '1'){
+                
+                try{
+                    Opportunity optyRecord = new Opportunity();
+                    optyRecord.Id = optyId;
+                    optyRecord.StageName = 'Order Creation';
+                    optyRecord.VerifiedOrder__c = true;
+                    
+                    update optyRecord;
+                    
+                    wrp.errorFlag = false;
+                    wrp.errorMessage = 'Successfully validated Contract details from Expresso and stage updated to Order Creation. ';
+                    
+                } catch(Exception e){
+                    wrp.errorFlag = true;
+                    wrp.errorMessage = 'Generic server error encountered while populating Contract details in Salesforce. '+e.getMessage();
+                }
+            }else if(responseWrapper.success== '0'){
+                wrp.errorFlag = true;
+                wrp.errorMessage = 'Error validating Contract details from Expresso, with error: "'+responseWrapper.message+'"';
+            }else{
+                wrp.errorFlag = true;
+                wrp.errorMessage = 'Error validating Contract details from Expresso: "'+responseWrapper.error_description+'"';
+            }
+            
+            System.debug('Pallavi Contract id:'+res.getBody());
+        }
+        catch(Exception e){
+            System.debug('Pallavi Contract id failure error:'+e.getMessage());
+            wrp.errorFlag = true;
+            wrp.errorMessage = 'Generic server error encountered while validating Contract details from Expresso. '+e.getMessage();
+        }
+        return wrp;
+    }
+    
+    @AuraEnabled
+    public static SaveResultWrapper SaveExpresso(String recordId, String optyId){
+        System.debug('Pallavi SaveExpresso called optyId:'+optyId);
+        System.debug('Pallavi SaveExpresso IMId:'+recordId);
+        Set<Integer> errorResponseCode = new Set<Integer>{500,502,503,401,404,411}; //Pallavi 14 June KT
+            SaveResultWrapper wrp = new SaveResultWrapper();
+        wrp.errorFlag = false;
+        wrp.errorMessage = 'Order details have been saved successfully in Expresso!';
+        
+        HttpResponse res;
+        
+        try{
+            System.debug('Pallavi SaveExpresso before res');
+            res = IntegrationHelper.returnIM(recordId);  // Anant 28 June - Issue In case response is Read Time Out - function is returning as null and thus giving error on line 463 attempt to de-refernce null object
+            System.debug('Pallavi SaveExpresso res:'+res);
+            // System.debug('Expresssoooooooooooo:'+res.getStatusCode()+'Message:'+res.getStatus()+'getBody():'+res.getBody());
+            IntegrationWrapper.Response responseWrapper;
+            if(!errorResponseCode.contains(res.getStatusCode()) && (res.getStatus() == 'OK' || res.getStatusCode() == 200 || res.getStatusCode() == 302)){
+                //New code starts
+                System.debug('Pallavi responseWrapper :'+responseWrapper);                
+                responseWrapper = (IntegrationWrapper.Response)JSON.deserialize(res.getBody(), IntegrationWrapper.Response.class);
+                System.debug('Pallavi responseWrapper :'+responseWrapper);
+                
+                if(responseWrapper.success!=null){
+                    if(responseWrapper.success=='1' && String.isNotBlank(responseWrapper.orderROID)){
+                        
+                        //List<Integration_Message__c> imList = new List<Integration_Message__c>([SELECT Id ,Response_Code__c ,Status__c FROM Integration_Message__c WHERE Id = :recordId]);
+                        
+                        try{                            
+                            String queryIM = 'SELECT ';
+                            for (Schema.FieldSetMember f : SObjectType.Integration_Message__c.FieldSets.Integration_Message_FieldSet.getFields())
+                                queryIM += f.getFieldPath() + ',';
+                            queryIM = queryIM.removeEnd(',');
+                            queryIM+= ' FROM Integration_Message__c where Id =:recordId';
+                            List<Integration_Message__c> imList = Database.query(queryIM);
+                            if(imList.size()>0){
+                                
+                                Integration_Message__c im  = IntegrationHelper.updateIM(imList[0],IntegrationHelper.request,res,'Opportunity',Id.valueOf(optyId));
+                                update im;  
+                            }
+                            
+                        }catch(Exception e){
+                            wrp.errorFlag = true;
+                            // wrp.errorMessage = 'Error encountered while Integration Message in Salesforce. '+e.getMessage();
+                            wrp.errorMessage   = e.getMessage();
+                        }
+                        
+                        
+                        try{  
+                            List<Opportunity> optyList = new List<Opportunity>([Select Id, StageName, Expresso_Order_Id__c from Opportunity where Id = :optyId]);
+                            //Opportunity opp = new Opportunity(Id = optyId);
+                            
+                            System.debug('optyList size :'+optyList.size());
+                            if(optyList.size()>0){
+                                optyList[0].StageName = 'Order Creation';
+                                optyList[0].Expresso_Order_Id__c = responseWrapper.orderROID;
+                                update optyList[0];
+                                System.debug('-------------------------------------optyList[0] updated with Order Id :'+responseWrapper.orderROID);
+                                
+                                
+                            }
+                            
+                            
+                            List<ContentDocumentLink> conList = new List<ContentDocumentLink>([Select ContentDocument.title, LinkedEntityId, ContentDocumentId from ContentDocumentLink WHERE LinkedEntityId= :optyId]);
+                            
+                            Set<String> conDocLinkSet = new Set<String>();
+                            
+                            for(ContentDocumentLink con : conList){
+                                conDocLinkSet.add(con.ContentDocumentId);
+                            }
+                            
+                            List<ContentVersion> conVerList = new List<ContentVersion>([Select title, IsLatest, ContentModifiedDate from ContentVersion WHERE ContentDocumentId in :conDocLinkSet and IsLatest = true order by ContentModifiedDate desc]);
+                            if(conVerList.size()>0){
+                                if(conVerList.size() == 1){
+                                    conVerList[0].IsMostRecent__c = true;
+                                    //By SIhant
+                                    conVerList[0].Document_Category__c = '6';
+                                }else if(conVerList.size() > 1){
+                                    for(Integer i=0;i<conVerList.size();i++){
+                                        if(i == 0){
+                                            conVerList[0].IsMostRecent__c = true;
+                                            conVerList[0].Document_Category__c = '6';
+                                        }
+                                        else{
+                                            conVerList[i].IsMostRecent__c = false;
+                                            conVerList[i].Document_Category__c = ''; 
+                                        }
+                                    }
+                                }
+                                update conVerList;
+                                UploadDocAPI.uploadDoc(optyList[0].Id);
+                                
+                            }
+                        }catch(Exception e){
+                            wrp.errorFlag = true;
+                            // wrp.errorMessage = 'Error encountered while saving Stage and Expresso Order Id details in Salesforce.'+e.getMessage();
+                            wrp.errorMessage  = e.getMessage();
+                        }
+                        
+                    }
+                    else if(responseWrapper.success=='0'){
+                        IntegrationHelper.updateData();                    
+                        wrp.errorFlag = true;
+                        //wrp.errorMessage = 'Error encountered while saving Order details in Expresso. Error- "'+responseWrapper.message+'".';
+                        wrp.errorMessage  = wrp.errorMessage = responseWrapper.message;
+                    }
+                    else{
+                        IntegrationHelper.updateData();
+                        wrp.errorFlag = true;
+                        // wrp.errorMessage = 'Error encountered while saving Order details in Expresso. Error- "'+responseWrapper.message+'".';
+                        wrp.errorMessage = responseWrapper.message; 
+                    }  
+                }else{
+                    IntegrationHelper.updateData();
+                    wrp.errorFlag = true;
+                    // wrp.errorMessage = 'Error encountered while saving Order details in Expresso. Error- "'+responseWrapper.error+'".';
+                    wrp.errorMessage = responseWrapper.error;
+                }                
+                /************A function to be called here to update IM */
+                
+                //New code ends
+            }else{
+                IntegrationHelper.updateData();
+                wrp.errorFlag = true;
+                //wrp.errorMessage = 'Error encountered while saving Order details in Expresso. Error code -'+responseWrapper.errorCode+'.';
+                // wrp.errorMessage = 'Error encountered while saving Order details in Expresso. Error code - '+res.getBody()+'.';
+                wrp.errorMessage  = res.getBody();
+            }
+            System.debug('Pallavi SaveExpresso ends');
+        }catch(Exception e){
+            System.debug('******************************');
+            wrp.errorFlag = true;
+            wrp.errorMessage = 'Generic server error encountered while saving Order details in Expresso.'+e.getMessage();
+        }
+        return wrp;
+        
+    }
+    @AuraEnabled
+    public static void updateContentVersion(String optyId,String conDocId){
+        System.debug('updateContentVersion');
+        List<ContentDocumentLink> conList = new List<ContentDocumentLink>([Select ContentDocument.title, LinkedEntityId, ContentDocumentId from ContentDocumentLink WHERE LinkedEntityId= :optyId]);
+        Set<Id> conDocLinkSet = new Set<Id>();
+        Map<Id,ContentVersion> conDocLinkMap = new Map<Id,ContentVersion>();
+        for(ContentDocumentLink con : conList)
+            conDocLinkSet.add(con.ContentDocumentId);
+        
+        for(ContentVersion conVersion : [Select Document_Category__c,ContentDocumentId from ContentVersion WHERE (ContentDocumentId in :conDocLinkSet and Document_Category__c !='') or ContentDocumentId = :conDocId]){
+            System.debug('conVersion: '+conVersion);
+            if(conDocId.equalsIgnoreCase(conVersion.ContentDocumentId)){
+                conVersion.IsMostRecent__c = true;
+                conVersion.Document_Category__c = '6';
+            }
+            else{
+                conVersion.IsMostRecent__c = false;
+                conVersion.Document_Category__c = '';
+            }
+            conDocLinkMap.put(conVersion.ContentDocumentId,conVersion);
+        }
+        System.debug('conDocLinkMap: '+conDocLinkMap);
+        update conDocLinkMap.values();
+        
+    }
+    
+    // Added by Kloudrac
+    @AuraEnabled
+    public static Opportunity getOpptyFieldsvalidation(String recordId){
+        
+        Opportunity oppty = new Opportunity();
+        oppty = [Select id,Brand__c, AccountId,Publishers__c, Agency__c,Agency__r.Id,Agency__r.Expresso_Id__c,til_dropdown_elem__c,Account.Sales_Industry__c,Account.Account_Sales_Industry__c, StageName, Expected_Delivery_Date__c, Brief_Submission_Date__c,
+                 Campaign_Objective__c, Target_Audience_Gender__c, Target_Audience_Age__c,Source_By__c,BCCL_Sub_Group__c, Brand_Perception_by_Target_Audience__c, Duration_Of_The_Plan_Days__c, Media_Mix_Discussed_with_the_client__c, Brief_Documented_By__c,TIL_Allocated_Budget_Of_The_Campaign__c from Opportunity Where Id=:recordId];
+        System.debug('oppty == '+oppty);
+        if(oppty != null)
+        {
+            return oppty;
+        }
+        else
+            return null;
+    }
+    //Added By Kloudrac
+    
+    @AuraEnabled
+    public static Account getAgencyName(Id accountId, Id AgencyOnOpportunity)
+    {
+        Account acc = [select Id,Name,RecordTypeId,RecordType.Name,ParentId from Account Where Id = :accountId ];
+        system.debug('@@acc: ' +acc);
+        if(acc!=null && (acc.Id == AgencyOnOpportunity)||(acc.ParentId == AgencyOnOpportunity && acc.RecordType.Name =='Approved GST Entity'))
+            return acc;
+        else
+            return null;
+    }
+    //==========================================================================Added by Nitish  
+    /* @AuraEnabled
+   public static list<ContentDocumentLink> allSendAttData(string OppId)
+    {
+        set<id> setAgesId = new set<id>();
+        if(OppId != null && OppId != '')
+        {
+            list<Agency_mail_response__c> lstAgeMail = [select id from Agency_mail_response__c where Opportunity__c=:OppId];
+            
+            for(Agency_mail_response__c EachResId : lstAgeMail)
+            {  setAgesId.add(EachResId.id); }
+            
+            
+            
+        }
+        return [select id,ContentDocument.title,ContentDocument.FileExtension,ContentDocument.CreatedDate,LinkedEntityId,LinkedEntity.Name from ContentDocumentLink where LinkedEntityId IN (select id from Agency_mail_response__c where Source_Response__c=:setAgesId) order by ContentDocument.CreatedDate desc];
+    }*/
+    @AuraEnabled
+    public static void insertFileContantVersion(string recordId,string fileData)
+    {
+        if(recordId != null && recordId != '')
+        {
+            map<string,object> mapFileNameWithBlobData = (map<string,object>)JSON.deserializeUntyped(fileData);
+            
+            if(mapFileNameWithBlobData != null && mapFileNameWithBlobData.size()>0)
+            {
+                attatchFileToRec(mapFileNameWithBlobData,recordId);
+            }
+        }
+    }
+    
+    @AuraEnabled
+    public static void attatchFileToRec(Map<String,object> mapStrObj,string recordId)
+    {
+        list<ContentVersion> lstConInsert = new list<ContentVersion>();
+        set<id> setContentId = new set<id>();
+        list<ContentVersion> lstconDoc = new list<ContentVersion>();
+        system.debug('mapStrObj==>>'+mapStrObj);
+        if(mapStrObj != null && mapStrObj.size()>0)
+        {
+            for(string eachStr : mapStrObj.keySet())
+            {
+                system.debug(string.valueof(mapStrObj.get(eachStr)));
+                ContentVersion conVer = new ContentVersion();
+                // conVer.FirstPublishLocationId = UserInfo.getUserId();
+                // conVer.IsMostRecent__c = true;
+                system.debug('eachStr=='+eachStr);
+                system.debug('eachStr.substringBeforeLast(.)=='+eachStr.substringBeforeLast('.'));
+                //  conVer.ContentLocation = 'V'; // S specify this document is in SF, use E for external files              
+                conVer.PathOnClient = eachStr; // The files name, extension is very important here which will help the file in preview.
+                conVer.Title = eachStr.substringBeforeLast('.'); // Display name of the files
+                conVer.VersionData =      EncodingUtil.base64Decode(string.valueof(mapStrObj.get(eachStr)));
+              //  conVer.VersionData = blob.valueof(string.valueof(mapStrObj.get(eachStr)));
+                lstConInsert.add(conVer);
+                
+            }
+        }
+        if(lstConInsert !=  null && lstConInsert.size()>0)
+        {
+            system.debug('==240====>>'+lstConInsert);
+            
+            insert lstConInsert;
+            // for new file Insert
+            system.debug('lstconDoc===>>'+lstconDoc);
+            if(lstconDoc == null || lstconDoc.size()<=0)            
+            {
+                if(setContentId != null && setContentId.size()>0)
+                    setContentId.clear();
+                
+                system.debug('');
+                string eachFileId;
+                for(ContentVersion eachCon : lstConInsert)
+                {eachFileId = eachCon.id;
+                 setContentId.add(eachCon.id);}
+                
+                map<id,ContentVersion> mapIdContentVersion = new map<id,ContentVersion>([select id,ContentDocumentId from ContentVersion where id=:setContentId]);
+                
+                system.debug(lstConInsert);
+                list<ContentDocumentLink> lstCDL = new list<ContentDocumentLink>();
+                for(ContentVersion eachCon :lstConInsert)
+                {
+                    ContentDocumentLink cdl = New ContentDocumentLink();
+                    
+                    cdl.LinkedEntityId = Id.valueof(recordId);
+                    cdl.ContentDocumentId = mapIdContentVersion.get(eachCon.id).ContentDocumentId;
+                    system.debug('===248======>>'+eachCon.Id);
+                    system.debug('===248======>>'+eachCon.Id);
+                    cdl.shareType = 'V';
+                    lstCDL.add(cdl);
+                    // Insert cdl;
+                }
+                system.debug('lstCDL===>>'+lstCDL);
+                insert lstCDL;
+                // for single file only
+               // updateContentVersion(eachFileId,recordId);
+            }
+        }
+    }
+    @AuraEnabled
+    public static string updateContactFileName(string recordId,string FileName, dateTime createdDate)
+    {
+        string returnText = '';
+        //date newDate = date.valueOf(createdDate) ;      
+        set<id> setContentId = new set<id>();
+        string selectedFileId;
+        //list<ContentVersion> lstconDocupdate = new list<ContentVersion>();
+        for(ContentDocumentLink eachLink :[SELECT ContentDocumentId FROM ContentDocumentLink WHERE LinkedEntityId = :Id.valueof(recordId)])
+        {setContentId.add(eachLink.ContentDocumentId);}
+        system.debug('FileName===>>'+FileName);
+        system.debug('createdDate===>>'+createdDate);
+        system.debug('setContentId===>>'+setContentId);
+        
+        //list<ContentVersion> lstconDoc = [SELECT id,title,PathOnClient,ContentDocumentId FROM ContentVersion WHERE title=:FileName AND createdDate=: createdDate AND ContentDocumentId=:setContentId];
+        
+        dateTime createdDateNew = createdDate;
+        //dateTime MaxDateTime = Datetime.valueOfGmt(createdDate);
+        dateTime minDateTime = createdDateNew.addSeconds(-4);
+        
+        list<ContentDocumentLink> lstConDocLink = [select id, ContentDocument.title, ContentDocumentId, ContentDocument.CreatedDate, LinkedEntityId, LinkedEntity.Name from ContentDocumentLink where LinkedEntityId = : Id.valueof(recordId) AND ContentDocument.title =:FileName AND (ContentDocument.CreatedDate >=: minDateTime) AND ContentDocument.CreatedDate <=: createdDateNew ];
+        if(lstConDocLink!= null && lstConDocLink.size()>0)
+        {system.debug('---in IF------->>>'+lstConDocLink);
+         
+         for(ContentDocumentLink eachCon : lstConDocLink)
+         {
+             selectedFileId = eachCon.ContentDocumentId;
+             // lstconDocupdate.add(new ContentVersion(id=eachCon.id,title=FileName));
+         }
+        }
+        if(selectedFileId != null && selectedFileId != '')
+        { updateContentVersion(recordId,selectedFileId);
+         // update lstconDocupdate;
+         returnText += 'Success : File Has been Updated successfully';
+        }
+        else
+            returnText += 'Error : File dosen\'t exist on Opportunity';
+        
+        return returnText;
+    }
+    
+    public static void sendErrorMessageTousers(string reffrenceId,string recordId,string billabelEntity)
+    {
+        system.debug('sendErrorMessageTousers1');
+        // list<opportunity> lstopp = [select id from opportunity where RO_Reference__c =:reffrenceId ];
+        list<opportunity> lstopp =   getListOfOpportunity(recordId , reffrenceId);
+        system.debug('lstopp=='+lstopp);
+        if(lstopp != null && lstopp.size()>0)
+        {
+            system.debug('sendErrorMessageTousers2');
+            Messaging.SingleEmailMessage semail = new Messaging.SingleEmailMessage();
+            semail.setToAddresses(system.label.RO_duplicacy_Email_Address.split(','));
+            string subject = 'Duplicate Ro Reference Number '+reffrenceId;
+            semail.setSubject(subject);
+            string body='Hi,<br/><br/> Order is created by duplicate ro number on the below opportunity.<br/>'+URL.getSalesforceBaseUrl().toExternalForm()+'/'+recordId+'<br/> <br/> Below opty link with conflicting RO Number <br/>';
+            for(opportunity eachOpp : lstopp )
+            {
+                body += URL.getSalesforceBaseUrl().toExternalForm()+'/'+eachOpp.id+'<br/>';
+            }
+            body += 'Thanks and regards';
+            semail.setHtmlBody(body);
+            if(stopdoubleEmail)
+            {
+                system.debug('sendErrorMessageTousers3');
+                Messaging.sendEmail(new list<Messaging.SingleEmailMessage>{semail});
+                stopdoubleEmail = false;
+            }
+            
+        }
+        system.debug('sendErrorMessageTousers======>>>');
+        
+    }
+    
+    public static boolean getFinalYearData(string oppId, string reffrenceId)
+    {
+        system.debug('getFinalYearData1');
+        boolean isTrue=true;
+        list<opportunity> lstopp = getListOfOpportunity(oppId , reffrenceId);
+        system.debug('lstopp'+lstopp);
+        
+        if(lstopp != null && lstopp.size()>0)
+        {
+            system.debug('getFinalYearData2');
+            Messaging.SingleEmailMessage semail = new Messaging.SingleEmailMessage();
+            semail.setToAddresses(system.label.RO_duplicacy_Email_Address.split(','));
+            string subject = 'Duplicate Ro Reference Number '+reffrenceId;
+            semail.setSubject(subject);
+            string body='Hi,<br/><br/> Order is created by duplicate ro number on the below opportunity.<br/>'+URL.getSalesforceBaseUrl().toExternalForm()+'/'+oppId+'<br/> <br/> Below opty link with conflicting RO Number <br/>';
+            
+            for(opportunity eachOpp : lstopp )
+            {
+                body += URL.getSalesforceBaseUrl().toExternalForm()+'/'+eachOpp.id+'<br/>';
+            }
+            body += 'Thanks and regards';
+            semail.setHtmlBody(body);
+            if(stopdoubleEmail)
+            {
+                system.debug('getFinalYearData3');
+                Messaging.sendEmail(new list<Messaging.SingleEmailMessage>{semail});
+                stopdoubleEmail = false;
+            }
+            isTrue = false;
+        }
+        else
+        {
+            isTrue = true;
+        }
+        system.debug('getFinalYearData======>>>');
+        return isTrue;
+        
+    }
+    @AuraEnabled
+    public static list<Opportunity> getListOfOpportunity(string recordId , string reffrenceId )
+    {
+        system.debug('reffrenceId='+reffrenceId);
+        system.debug('reffrenceId='+recordId);
+        Date CurrentDate = system.today();
+        Date compareStartDate;
+        Date compareEndDate;
+        string billabelEntity = [select id,Billable_Entity__c,RO_Reference__c  from opportunity where id=:recordId limit 1].Billable_Entity__c;
+        system.debug('billabelEntity='+billabelEntity);
+        if(CurrentDate.month()>=4)
+        {
+            compareStartDate = date.newInstance(CurrentDate.year(),4,1);
+            compareEndDate = date.newInstance(CurrentDate.addYears(1).year(),CurrentDate.addMonths(-1).month(),31);
+            
+        }
+        else if(CurrentDate.month()<=3)
+        {
+            compareStartDate = date.newInstance(CurrentDate.addYears(-1).year(),4,1);
+            compareEndDate = date.newInstance(CurrentDate.year(),3,31);            
+        }
+        
+        list<opportunity> lstopp = [select id,Order_Created_Date__c from opportunity where  RO_Reference__c =:reffrenceId AND Billable_Entity__c =:billabelEntity AND Order_Created_Date__c>=:compareStartDate AND Order_Created_Date__c<=:compareEndDate ];
+        system.debug('================'+lstopp.size());
+        return lstopp;
+    }
+    //=========================================================Nitish Changes End
+    //====================get UserInfo
+    @AuraEnabled
+    public static string ReturnUserProfileName()
+    {
+        String ProfileName = [select Id,Name from Profile where Id =:userinfo.getProfileId() limit 1].Name;
+        return ProfileName;
+    }
+    
+}
++++++++++++++++++++++++++++++++++++++++ end ++++++++++++++++++++++++++
++_+++++++++++++++++++++++++++++++++++++++++== Create order contorler JS +++++++++++++++++++++++
+({
+    doInit: function(component, event, helper) {
+        
+        // Added by Nitish Bhardwaj
+        
+        /*  var getRelatedUserSendThroughEmailResponse = component.get("c.allSendAttData");
+        getRelatedUserSendThroughEmailResponse.setParams({"OppId":component.get("v.recordId")});
+        getRelatedUserSendThroughEmailResponse.setCallback(this,function(result){
+           
+            if(result.getState() ==="SUCCESS")
+            {
+                //component.set("v.FileData",result.getReturnValue());
+                var data = result.getReturnValue();
+                var jsondata = [];
+                // jsondata.push({label:"--NONE--",value:""});
+                console.log(data);
+               
+                for(var i=0;i<data.length;i++)
+                {  
+                    console.log(data[i]);
+                    component.set("v.showOrNot",true);
+                    var d = new Date(data[i].ContentDocument.CreatedDate);
+                    //helper.dateFormat(d);
+                    jsondata.push({label:data[i].ContentDocument.Title+'.'+data[i].ContentDocument.FileExtension+"  Upload date :-"+helper.dateFormat(d),
+                                   value:data[i].ContentDocument.CreatedDate+'_@@_'+data[i].ContentDocument.Title
+                                   ,key:data[i].LinkedEntityId,fileName:data[i].ContentDocument.Title});
+                }
+                component.set("v.getAllFileInfo",data);
+                console.log(JSON.stringify(result.getReturnValue()));
+                console.log(JSON.stringify(jsondata));
+                component.set("v.FileDataNew",jsondata);
+               
+                console.log(JSON.stringify(component.get("v.FileDataNew")));
+            }
+        });
+       
+        $A.enqueueAction(getRelatedUserSendThroughEmailResponse);
+        //--- End -----
+       */
+        
+        var recordid = component.get("v.recordId");
+        // Added by Kloudrac
+        helper.GetUserProfileName(component, event);
+        helper.getFieldsvalidation(component, event, helper);
+        var action = component.get('c.fetchOrderDetails');
+        
+        action.setParams({
+            "recordId": recordid
+        });
+        
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                console.log('Check 1');
+                var responseVal = response.getReturnValue();
+                console.log('Response:', responseVal);
+                if (responseVal.pitchedForSS == "0")
+                    component.set("v.IsselfService", false);
+                else component.set("v.IsselfService", true);
+                
+                /*var obj = { uploadId: "", uploadTitle: "", verifiedOrder: false, pitchedForSS: "0", optyName: responseVal.optyName, contractId: "", expressoId: "", advertiserGST: "", agencyGST: "", billableGST: "", advertiserGSTName: "", agencyGSTName: "", billableGSTName: "" };
+                if ((responseVal.pitchedForSS == "0" && responseVal.experssoOrderId != null && responseVal.experssoOrderId != 'undefined') || (responseVal.pitchedForSS == "1" && responseVal.verifiedOrder == true && responseVal.contractId != null && responseVal.contractId != 'undefined' && responseVal.billableGST != null && responseVal.billableGST != 'undefined')) {
+                    obj = { uploadId: responseVal.uploadId, uploadTitle: responseVal.uploadTitle, verifiedOrder: responseVal.verifiedOrder, pitchedForSS: responseVal.pitchedForSS, optyName: responseVal.optyName, contractId: responseVal.contractId, expressoId: responseVal.expressoId, advertiserGST: responseVal.advertiserGST, agencyGST: responseVal.agencyGST, billableGST: responseVal.billableGST, advertiserGSTName: responseVal.advertiserGSTName, agencyGSTName: responseVal.agencyGSTName, billableGSTName: responseVal.billableGSTName};
+                    component.set("v.readOnly", true);
+                  }*/
+                //Sidhant Changes Start
+                var obj = { uploadId: "", uploadTitle: "", verifiedOrder: false, pitchedForSS: "0", optyName: responseVal.optyName, contractId: "", expressoId: "", advertiserGST: "", agencyGST: "", billableGST: "", advertiserGSTName: "", agencyGSTName: "", billableGSTName: "", agency: responseVal.agency, advertiser: responseVal.advertiser,roRef: responseVal.roRef};//,roReceivedDate: responseVal.roReceivedDate};
+                if ((responseVal.pitchedForSS == "0" && responseVal.experssoOrderId != null && responseVal.experssoOrderId != 'undefined') || (responseVal.pitchedForSS == "1" && responseVal.verifiedOrder == true && responseVal.contractId != null && responseVal.contractId != 'undefined' && responseVal.billableGST != null && responseVal.billableGST != 'undefined')) {
+                    obj = { uploadId: responseVal.uploadId, uploadTitle: responseVal.uploadTitle, verifiedOrder: responseVal.verifiedOrder, pitchedForSS: responseVal.pitchedForSS, optyName: responseVal.optyName, contractId: responseVal.contractId, expressoId: responseVal.expressoId, advertiserGST: responseVal.advertiserGST, agencyGST: responseVal.agencyGST, billableGST: responseVal.billableGST, advertiserGSTName: responseVal.advertiserGSTName, agencyGSTName: responseVal.agencyGSTName, billableGSTName: responseVal.billableGSTName, agency: responseVal.agency, advertiser: responseVal.advertiser,roRef: responseVal.roRef};//,roReceivedDate: responseVal.roReceivedDate};
+                    component.set("v.readOnly", true);
+                }
+                console.log('Getting obj:', JSON.stringify(obj));
+                //Sidhant Changes End
+                component.set("v.orderJSON", obj);
+                console.log('Order JSOn in parent cmp is:', component.get("v.orderJSON"));
+                component.set("v.optyName", responseVal.optyName);
+                component.set("v.expressoROId", responseVal.expressoROId);
+                // Added by Infogain
+                component.set("v.Status", responseVal.Status);
+                component.set("v.AgencyStatus", responseVal.AgencyStatus);
+                component.set("v.AgencyBillable", responseVal.AgencyBillable);
+                component.set("v.ClientBillableType", responseVal.ClientBillableType);
+                console.log('Order pitchedForSS:', responseVal.pitchedForSS);
+                console.log('Order RO_PackagesCount:', responseVal.RO_PackagesCount);
+                component.set("v.Spinner", false);
+                if (responseVal.expressoROId == null || responseVal.expressoROId == 'undefined') {
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "Please create this opportunity in Expresso to proceed further.",
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();
+                }
+                if (responseVal.Status == 'Suspecting' || responseVal.Status == 'Prospecting' || responseVal.Status == 'Requisition Submitted' ||responseVal.Status == 'Dropped') {
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "Please Get The Account Onboarded, In Order To Create Order",
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();
+                }
+                if (responseVal.AgencyStatus == 'Suspecting' || responseVal.AgencyStatus == 'Prospecting' || responseVal.AgencyStatus == 'Requisition Submitted' ||responseVal.AgencyStatus == 'Dropped') {
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "Please Get The Agency Onboarded To Proceed Furhter",
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();
+                }
+                //======================Changed by Kloudrac software Private Limited (05/24/2019)
+                //check for if agency/avertiser is single or multiple
+                if(responseVal.IsSingleAgency!=null && responseVal.IsSingleAgency != 'undefined' && responseVal.IsSingleAgency == true
+                   && responseVal.AgencyName !=null && responseVal.AgencyName != '' && responseVal.AgencyName != 'undefined')
+                {
+                    component.set("v.IsSingleAgency", true);
+                    component.set("v.selAccountItem2", component.get("v.orderJSON.agency"));   //if single agency Gst
+                    component.set("v.AgencyName", responseVal.AgencyName);
+                }
+                if(responseVal.IsSingleAdvertiser!=null && responseVal.IsSingleAdvertiser != 'undefined' && responseVal.IsSingleAdvertiser == true
+                   && responseVal.AdvertiserName != null && responseVal.AdvertiserName != '' && responseVal.AdvertiserName!= 'undefined')
+                {
+                    component.set("v.IsSingleAdvertiser", true);
+                    component.set("v.selAccountItem1", component.get("v.orderJSON.advertiser"));   //if single advertiser
+                    component.set("v.AdvertiserGSTName", responseVal.AdvertiserName);
+                }
+                //case 4 - If Advertiser is non- billable (onboarded) and agency is non-billable (onboarded)
+                if (responseVal.ClientBillableType != '238' && responseVal.ClientBillableType != '239' && responseVal.AgencyBillable != null && responseVal.AgencyBillable != '' && responseVal.AgencyBillable != 'undefined' && responseVal.AgencyBillable != '238' && responseVal.AgencyBillable != '239' ){
+                    component.set("v.BillableAdvertiser", false);
+                    /* Commented by kloudrac for case 4
+                   * var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "Either Of The Account Or Agency Tagged Here Should Be Billable",
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();*/
+                    
+                }
+                // case1 - If Advertiser is non- billable (onboarded) and no agency is selected
+                if (responseVal.ClientBillableType != '238' && responseVal.ClientBillableType != '239' && (responseVal.AgencyBillable == null || responseVal.AgencyBillable == '' || responseVal.AgencyBillable == 'undefined'))
+                {
+                    component.set("v.AgencyExist", false);
+                    component.set("v.BillableAdvertiser", false);
+                    
+                }
+                //===
+                if ((responseVal.ClientBillableType == '238' || responseVal.ClientBillableType == '239') && (responseVal.AgencyBillable == null || responseVal.AgencyBillable == '' || responseVal.AgencyBillable == 'undefined'))
+                {
+                    component.set("v.BillableAdvertiser", true);
+                    component.set("v.AgencyExist", false);
+                    
+                }
+                // case 3 -  If Advertiser is non- billable or billable (onboarded) and agency is billable (onboarded) is selected
+                if (responseVal.AgencyBillable != null && responseVal.AgencyBillable != '' && responseVal.AgencyBillable != 'undefined' &&
+                    (responseVal.AgencyBillable == '238' || responseVal.AgencyBillable == '239' ))
+                {
+                    component.set("v.BillableAgency", true);
+                }
+                //============================================kloudrac change end========================================================================================
+                console.log('Anant ----- responseVal.RO_PackagesCount is : ',responseVal.RO_PackagesCount);
+                //Temporarily commented Pallavi 14 June KT
+                //  if(responseVal.RO_PackagesCount == 0 && responseVal.pitchedForSS == "1"){ //Anant 28 June Commenting this as Ro PAckage is mandatory for Pitched for SS 1 and 0
+                if(responseVal.RO_PackagesCount == 0 && responseVal.pitchedForSS != "1"){ // Added by anant 28 June
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "Please add RO Packages before proceeding with Order Creation.",
+                        "mode" : "sticky",
+                        "type" : "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();  
+                }
+                // Compro - 15th March 2019 START - Validation Error for Embargo Agency and Account
+                console.log('test responseVal.AccountCommercialStatus is ', responseVal.AccountCommercialStatus);
+                if (responseVal.AgencyCommercialStatus == "209" || responseVal.AccountCommercialStatus == "209") {
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "THE ACCOUNT/AGENCY TAGGED TO THIS OPPORTUNITY IS MARKED AS EMBARGO, YOU CAN PROCEED WITH ORDER CREATION ONCE EMBARGO IS REVERSED.",
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();
+                }
+                // Compro - 15th March 2019 END - Validation Error for Embargo Agency and Account
+                
+                // Compro - 28th March 2019 START - ContactRole Error
+                console.log('test responseVal.checkContactRole is ', responseVal.checkContactRole);
+                if (responseVal.checkContactRole == false && component.get("v.ProfileName") !='International Team' &&  component.get("v.ProfileName") != 'International Team No Contact Access') {
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": "Please add the contact role on this opportunity to proceed further for order creation",
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();
+                }
+                // Compro - 28th March 2019 END - Contact Role Error
+                
+            }
+            else {
+                console.log('Check 2');
+                var errors = response.getError();
+                var msg;
+                if (errors) {
+                    if (errors[0] && errors[0].message) {
+                        console.log("Error message: " +
+                                    errors[0].message);
+                        msg = errors[0].message;
+                    }
+                } else {
+                    console.log("Unknown error");
+                    msg = "Unknown error";
+                }
+                component.set("v.error", true);
+                component.set("v.errorMessage", msg);
+                component.set("v.severity", "error");
+                var toastEvent = $A.get("e.force:showToast");
+                toastEvent.setParams({
+                    "title": "Error!",
+                    "message": msg,
+                    "mode": "sticky",
+                    "type": "error"
+                });
+                toastEvent.fire();
+                $A.get("e.force:closeQuickAction").fire(); // Added by anant 28 June
+                console.log("Failed with state : " + state);
+                component.set("v.Spinner", false);
+            }
+        });
+        
+        $A.enqueueAction(action);
+    },
+    
+    openSingleFile: function(component, event, helper) {
+        var x = component.get("v.orderJSON");
+        
+        if (x != null && x != 'undefined' && x.uploadId != null && x.uploadId != 'undefined') {
+            $A.get('e.lightning:openFiles').fire({
+                recordIds: [x.uploadId]
+            });
+        }
+        
+    },
+    /* handleUploadFinished: function(component, event, helper) {
+       
+        // Get the list of uploaded files
+        var uploadedFiles = event.getParam("files");
+        var recordid = component.get("v.recordId");
+        console.log('handleUploadFinished called',recordid);
+        var action = component.get('c.updateContentVersion');
+        action.setParams({
+            "optyId": recordid,
+            "conDocId": uploadedFiles[0].documentId
+        });
+        console.log('handleUploadFinished called1',uploadedFiles[0].documentId);
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                console.log(JSON.stringify(uploadedFiles));
+                component.set("v.fileUploadedName", uploadedFiles[0].name);
+                console.log('Response array:', uploadedFiles[0].documentId);
+                component.set("v.documentId", uploadedFiles[0].documentId);
+            }
+            else {
+                console.log('Check 2',response.getError());
+                //var errors = response.getError();
+            }
+           
+        });
+        $A.enqueueAction(action);
+       
+    },*/
+    
+    handleApplicationEvent: function(component, event, helper) {
+        
+        var account = event.getParam("lookupAccount");
+        var accountNum = event.getParam("accountNum");
+        // var accountName = event.getParam("accountName");
+        console.log('***********',account,accountNum);
+        if(accountNum == 8 || accountNum == 9 ||accountNum == 6)
+            component.set("v.selAccountItem3", account);
+        else if(accountNum == 7 )
+            component.set("v.selAccountItem2", account);
+            else if(accountNum == 5 )
+                component.set("v.selAccountItem1", account);
+        // set the handler attributes based on event data
+        // //=======================kloudrac change end
+                else
+                    component.set("v.selAccountItem" + accountNum, account);
+        //============================================Added By Kloudrac 14/06/2019
+        //Autofill Agency In Case-3 If Billable GST selected is agency
+        var BillableGst = component.get("v.selAccountItem3");
+        
+        var AgencyOnOpportunity = component.get("v.orderJSON.agency");
+        var AgencySelected =  component.get("v.selAccountItem2");
+        console.log('AgencySelected: ' +AgencySelected);
+        console.log('===========' +BillableGst+'===================='+AgencyOnOpportunity);
+        if(AgencySelected == null || AgencySelected =='undefined' || AgencySelected != BillableGst)
+        {
+            console.log('Inside If');
+            if(accountNum == 8 && BillableGst !=null && BillableGst != 'undefined' && BillableGst.indexOf(account) != -1)
+            {
+                var lookUpId = component.find("AgencyGSTId");
+                if(lookUpId != null && lookUpId != 'undefined')
+                {
+                    if ($A.util.isArray(lookUpId))
+                    {
+                        lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                    }
+                    else
+                        lookUpId.myAuraMethod();
+                }
+                helper.getAgencyName(component,account,AgencyOnOpportunity);
+            }
+        }
+        //===========================================
+    },
+    
+    handleSave: function(component, event, helper) {
+        
+        component.set("v.error", false);
+        component.set("v.severity", "error");
+        var IsSelfService = component.get("v.IsselfService");
+        var obj = component.get("v.orderJSON");
+        //Sidhant Changes Start
+        console.log('*********handleSave*******');
+        console.log('Checking obj:', JSON.stringify(obj));
+        if(!obj.agency)
+            obj.agency==null;
+        console.log('agency', obj.agency);
+        console.log('advertiser', obj.advertiser);
+        //Sidhant Changes End
+        component.set("v.Spinner", true);
+        
+        var blankField = false;
+        console.log('Blankfield: ', blankField);
+        if (IsSelfService != 'undefined' && IsSelfService != null) {
+            if (IsSelfService == true) { //CONTRACT VALIDATION CHECK Pallavi 14 June KT
+                obj.contractId = component.find("contractId").get("v.value");
+                obj.billableGST = component.get("v.selAccountItem3");
+                obj.pitchedForSS = '1';
+                console.log('contractId', obj.contractId);
+                console.log('billableGST', obj.billableGST);
+                if (obj.contractId == 'undefined' || obj.contractId == null || obj.billableGST == 'undefined' || obj.billableGST == null) {
+                    blankField = true;
+                }
+                console.log('blankField', blankField);
+            } else { //CREATE ORDER SCREEN BLANK FIELDS CHECK Pallavi 14 June KT
+                
+                // obj.uploadTitle = component.get("v.documentId");
+                console.log('CREATE ORDER SCREEN: ');
+                // console.log('Inside handleSave documentId:', component.get("v.documentId"));
+                obj.advertiserGST = component.get("v.selAccountItem1");
+                console.log('@@component.get("v.selAccountItem2")' +component.get("v.selAccountItem2"));
+                var agencyGst = component.get("v.selAccountItem2");
+                if(agencyGst!= null && agencyGst!='undefined')
+                    obj.agencyGST = component.get("v.selAccountItem2");
+                else
+                    obj.agencyGST = component.get("v.selAccountItem3");
+                obj.billableGST = component.get("v.selAccountItem3");
+                
+                //Sidhant Changes Start
+                obj.roRef = component.get("v.roReference");
+                console.log('obj.uploadTitle : ', obj.uploadTitle );
+                console.log('obj.advertiserGST : ', obj.advertiserGST );
+                console.log('obj.agencyGST : ', obj.agencyGST );
+                console.log('obj.billableGST : ', obj.billableGST );
+                console.log('obj.roRef : ', obj.roRef);
+                
+                console.log('Blankfield: ', blankField);
+                if (obj.agency) {
+                    console.log('Before obj.agency Blankfield: ', blankField);
+                    
+                    if (obj.uploadTitle == null || obj.uploadTitle == 'undefined' || obj.advertiserGST == 'undefined' || obj.advertiserGST == null || obj.agencyGST == 'undefined' || obj.agencyGST == null || obj.billableGST == 'undefined' || obj.billableGST == null || !obj.roRef)// || !obj.roReceivedDate)
+                        blankField = true;
+                    console.log('After obj.agency Blankfield: ', blankField);
+                } else if (obj.advertiser) {
+                    console.log('Before obj.advertiser Blankfield: ', blankField);
+                    
+                    if (obj.uploadTitle == null || obj.uploadTitle == 'undefined' || obj.advertiserGST == 'undefined' || obj.advertiserGST == null || !obj.roRef)// || !obj.roReceivedDate)
+                        blankField = true;
+                    console.log('After obj.advertiser Blankfield: ', blankField);
+                }
+                
+                console.log('Blankfield: ', blankField);
+                
+            }
+        }
+        component.set("v.orderJSON", obj);
+        console.log('obj: ', JSON.stringify(obj));
+        console.log('Blankfield: ', blankField);
+        
+        
+        // get file information or get pickList File value
+        if(blankField == false)
+        {
+            var getFileData;
+            if(component.find("RelatedFiles"))
+            {getFileData = component.find("RelatedFiles").get("v.value");
+             console.log('===getFileData===>>>>'+getFileData);
+             console.log('======>>>>>'+JSON.stringify(component.get("v.fileData")));
+            }
+            if((typeof getFileData === "undefined" || getFileData == null || getFileData.length<=0) &&  (component.get("v.fileData") == null || typeof component.get("v.fileData") === "undefined" || component.get("v.fileData").length<=0))
+            {
+                helper.dynamicToastErrorOrSuccess("Error",'Upload file or choose file',"Error",event);
+                component.set("v.Spinner", false);
+                return false;
+            }
+            else
+            {
+                if(typeof getFileData !== "undefined" && getFileData != null && getFileData.length>0 && component.get("v.fileData") != null && typeof component.get("v.fileData") !== "undefined" && component.get("v.fileData").length>0)
+                {
+                    helper.dynamicToastErrorOrSuccess("Error",'Either upload file or choose file',"Error",event);
+                    component.set("v.Spinner", false);
+                    return false;
+                }
+                else
+                {
+                    helper.checkRefrenceIdAndBillabeEntry(component,event)
+                    .then(
+                        $A.getCallback(function(result) {
+                            
+                            if( component.get("v.oldReffrenceId") !== component.get("v.roReference") && typeof result !=="undefined" && result != null && result.length>0)
+                            {
+                                console.log("result=440====>",result);
+                                
+                                var warning = 'ro Reference Number is already exest on another opportunity'
+                                component.set("v.oldReffrenceId",component.get("v.roReference"));
+                                helper.dynamicToastErrorOrSuccess("warning",warning,"Warning",event);
+                                component.set("v.Spinner", false);
+                            }
+                            else
+                            {
+                                console.log("result=446====>",result);
+                                if(typeof getFileData !== "undefined" && getFileData != null && getFileData.length>0)
+                                {
+                                    var createdDate = getFileData.split("_@@_")[0];
+                                    console.log(createdDate);
+                                    var fileName = getFileData.split("_@@_")[1];
+                                    console.log("==fileName=>>>>"+fileName);
+                                    helper.FileUpdateonOpp(component,fileName,createdDate)
+                                    .then(
+                                        $A.getCallback(function(result) {
+                                            
+                                            if(result.includes("Success"))
+                                                helper.heplerHandleSave(component, event, helper);
+                                            else if(result.includes("Error"))
+                                            {helper.dynamicToastErrorOrSuccess("Error",result,"Error",event); component.set("v.Spinner", false); }
+                                            
+                                            
+                                        }),
+                                        $A.getCallback(function(error){console.log("Promise was rejected: ", error); component.set("v.Spinner", false); })
+                                    )
+                                    
+                                }else
+                                    if(component.get("v.fileData") != null && typeof component.get("v.fileData") !== "undefined" && component.get("v.fileData").length>0)
+                                    {
+                                        helper.commonFileReader(component.get("v.fileData"))                
+                                        .then(
+                                            // resolve handler
+                                            $A.getCallback(function(resolve) {
+                                                console.log("====>>93====>>"+resolve);    
+                                                helper.FileUploadOnOpp(component,resolve,component.get("v.recordId"))
+                                                .then(
+                                                    $A.getCallback(function(resolve) {
+                                                        helper.heplerHandleSave(component, event, helper);
+                                                    }),
+                                                    $A.getCallback(function(error) {
+                                                        component.set("v.Spinner", false);
+                                                        console.log("Promise was rejected: ", error);})
+                                                    
+                                                )
+                                            }),
+                                            $A.getCallback(function(error) {
+                                                console.log("Promise was rejected: ", error);})
+                                        )
+                                    }
+                            }
+                            
+                        }),
+                        $A.getCallback(function(error){console.log("Promise was rejected: ", error); component.set("v.Spinner", false); })
+                    )
+                }
+            }
+            
+        }
+        else
+        {
+            console.log('Check 4');
+            component.set("v.Spinner", false);
+            var msg = 'Please fill all the fields and upload the Order document before proceeding further';
+            if (IsSelfService == true) {
+                msg = 'Please fill all the fields.'
+            } else {
+                
+            }
+            component.set("v.error", true);
+            component.set("v.errorMessage", msg);
+            component.set("v.severity", "warning");
+            
+            var toastEvent = $A.get("e.force:showToast");
+            toastEvent.setParams({
+                "title": "Warning!",
+                "message": msg,
+                "mode": "sticky",
+                "type": "warning"
+            });
+            //  toastEvent.fire(); // Commented by Anant on 2nd July
+            
+        }
+        
+        
+        // end
+        
+    },
+    onRender: function(component, event, helper) {
+        console.log("abc: ");
+    },
+    //====================added by kloudrac(25_06_2019)===============
+    //added to cancel single advertiser gst
+    clearSelection1: function(component, event, helper)
+    {
+        var advertiserGst = component.get("v.selAccountItem1");
+        var BillingGst = component.get("v.selAccountItem3");
+        console.log('advertiserGst: ' +advertiserGst+'======'+BillingGst);
+        if( BillingGst !=null && BillingGst != 'undefined' && BillingGst.indexOf(advertiserGst) != -1)
+        {
+            component.set("v.AdvertiserGSTName", null);
+            component.set("v.selAccountItem3", null);
+            component.set("v.selAccountItem1", null);
+            var AgencyExist = component.get("v.AgencyExist");
+            console.log("@AgencyExist: " +AgencyExist);
+            // var lookUpId;
+            //======================changed by kloudrac (13/06/2019)
+            var lookUpId = component.find("lookupBillingGstId");
+            if(lookUpId != null && lookUpId != 'undefined')
+            {
+                if ($A.util.isArray(lookUpId))
+                {
+                    lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                }
+                else
+                    lookUpId.myAuraMethod();
+            }
+        }
+        else
+        {
+            component.set("v.selAccountItem1", null);
+            component.set("v.AdvertiserGSTName", null);
+        }
+    },
+    // added to cancel single agency
+    clearSelection2: function(component, event, helper)
+    {
+        var BillingGst = component.get("v.selAccountItem3");
+        var AgencyGst = component.get("v.selAccountItem2");
+        console.log('AgencyGst: ' +AgencyGst+'======'+BillingGst);
+        if( BillingGst !=null && BillingGst != 'undefined' && BillingGst.indexOf(AgencyGst) != -1)
+        {
+            component.set("v.AgencyName", null);
+            component.set("v.selAccountItem2", null);
+            component.set("v.selAccountItem3", null);
+            // var lookUpId;
+            //======================changed by kloudrac (13/06/2019)
+            var lookUpId = component.find("lookupBillingGstId");
+            if(lookUpId != null && lookUpId != 'undefined')
+            {
+                if ($A.util.isArray(lookUpId))
+                {
+                    lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                }
+                else
+                    lookUpId.myAuraMethod();
+            }
+        }
+        else
+        {
+            component.set("v.selAccountItem2", null);
+            component.set("v.AgencyName", null);
+        }
+        
+    },
+    //==========
+    ClearDependentValue:function(component, event, helper)
+    {
+        var agencyGst = component.get("v.selAccountItem2");
+        var advertiserGst = component.get("v.selAccountItem1");
+        var BillingGst = component.get("v.selAccountItem3");
+        console.log('agencyGst: '+agencyGst);
+        console.log('advertiserGst: '+advertiserGst);
+        console.log('BillingGst: '+BillingGst);
+        var dependentId = event.getParam("dependentId");
+        console.log('DependentValue in clear event--' +dependentId);
+        if(dependentId != null && dependentId != 'undefined' && dependentId =='lookupBillingGstId')
+        {
+            var lookUpIdFromEvent = event.getParam("lookUpId");
+            console.log('lookUpId: ' +lookUpIdFromEvent);
+            if( BillingGst !=null && BillingGst != 'undefined')
+            {
+                if(advertiserGst !=null && advertiserGst !='undefined' && BillingGst.indexOf(advertiserGst) != -1 && lookUpIdFromEvent == 'lookupAdvertiserId')
+                {
+                    console.log('1');
+                    component.set("v.AdvertiserGSTName", null);
+                    var lookUpId = component.find(dependentId);
+                    console.log('lookUpId--' +lookUpId);
+                    if(lookUpId != null && lookUpId != 'undefined')
+                    {
+                        if ($A.util.isArray(lookUpId))
+                        {
+                            lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                        }
+                        else
+                            lookUpId.myAuraMethod();
+                        component.set("v.selAccountItem3", null);
+                        component.set("v.selAccountItem1", null);
+                    }
+                }
+                else if(agencyGst!=null && agencyGst != 'undefined' && BillingGst.indexOf(agencyGst) != -1 && lookUpIdFromEvent == 'AgencyGSTId')
+                {
+                    console.log('2');
+                    component.set("v.AgencyName", null);
+                    var lookUpId = component.find(dependentId);
+                    console.log('lookUpId--' +lookUpId);
+                    if(lookUpId != null && lookUpId != 'undefined')
+                    {
+                        if ($A.util.isArray(lookUpId))
+                        {
+                            lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                        }
+                        else
+                            lookUpId.myAuraMethod();
+                        component.set("v.selAccountItem3", null);
+                        component.set("v.selAccountItem2", null);
+                    }  
+                }
+            }
+        }
+        else if(dependentId != null && dependentId != 'undefined' && dependentId == 'lookupAdvertiserId')
+        {
+            var lookUpIdFromEvent = event.getParam("lookUpId");
+            console.log('lookUpId: ' +lookUpIdFromEvent);
+            if( BillingGst !=null && BillingGst != 'undefined')
+            {
+                if(advertiserGst !=null && advertiserGst != 'undefined' && BillingGst.indexOf(advertiserGst) != -1)
+                {
+                    console.log('3');
+                    component.set("v.AdvertiserGSTName", null);
+                    var lookUpId = component.find(dependentId);
+                    console.log('lookUpId--' +lookUpId);
+                    if(lookUpId != null && lookUpId != 'undefined')
+                    {
+                        if ($A.util.isArray(lookUpId))
+                        {
+                            lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                        }
+                        else
+                            lookUpId.myAuraMethod();
+                        component.set("v.selAccountItem3", null);
+                        component.set("v.selAccountItem1", null);
+                    }
+                }
+                else if(agencyGst !=null && agencyGst != 'undefined' && BillingGst.indexOf(agencyGst) != -1)
+                {
+                    console.log('4');
+                    component.set("v.AgencyName", null);
+                    var lookUpId = component.find("AgencyGSTId");
+                    console.log('lookUpId--' +lookUpId);
+                    if(lookUpId != null && lookUpId != 'undefined')
+                    {
+                        if ($A.util.isArray(lookUpId))
+                        {
+                            lookUpId.forEach(lookUpId => lookUpId.myAuraMethod());
+                        }
+                        else
+                            lookUpId.myAuraMethod();
+                        component.set("v.selAccountItem3", null);
+                        component.set("v.selAccountItem2", null);
+                    }  
+                }
+            }
+        }
+    },
+    //===========================kloudrac change end
+    getFileId : function(component, event, helper){
+        console.log("===>>",event.getParam("value"));
+        component.set("v.FileId",event.getParam("value"));
+        
+    },
+    closeQuickAction : function(component, event, helper)
+    {
+        $A.get('e.force:closeQuickAction').fire();
+    },
+    
+    handleUploadFinished1 : function(component, event, helper)
+    {
+        var FilesData = event.getSource().get("v.files");
+        if(FilesData.length>0)
+        {
+            var array = [];
+            for(var i=0;i<FilesData.length;i++)
+            {
+                if(FilesData[i].name.includes(",")){
+                    alert('Please remove Comma(,) from filename.')
+                }
+                else if(FilesData[i].size > 3000000)
+                {
+                    alert('File size cannot be greater than 3 Mb.');
+                }
+                    else
+                    {
+                        array.push(FilesData[i]);
+                        console.log(FilesData[i].name);
+                        
+                    }
+                //component.set("v.fileData",FilesData[i]);
+            }
+            
+            component.set("v.fileData",array);
+            console.log('===================='+FilesData.name);
+        }
+    },
+    deleteAtt : function(component,event,helper){
+        // alert(event.target.dataset.item);
+        var filterData =  component.get("v.fileData");
+        filterData.splice(event.target.dataset.item,1);
+        //filterData.filter(item=>item.name!==event.target.dataset.item);
+        console.log(filterData);
+        component.set("v.fileData",filterData);
+    }
+    
+})
+++++++++++++++++++++++++++ END ++++++++++++++
++++++++++++++++++++++++===== Craeteorderhelper ++++++++++++++++++++++++++
+({
+    handleExpresso: function(component, event, helper, iMID) {
+        component.set("v.Spinner", true);
+        component.set("v.DisableButton",true);
+        console.log('Handle Expresso');
+        var action = component.get('c.SaveExpresso');
+       
+        action.setParams({
+            "recordId": iMID,
+            "optyId": component.get("v.recordId")
+        });
+       
+       
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                var responseVal = response.getReturnValue();
+                console.log('handleExpresso response', responseVal);
+                if (responseVal.errorFlag == true) {
+                    component.set("v.error", true);
+                    component.set("v.errorMessage", responseVal.errorMessage);
+                    console.log('Error flag true', responseVal.errorFlag);
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": responseVal.errorMessage,
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    component.set("v.DisableButton",false);
+                    //  toastEvent.fire(); // Commented by Anant on 2nd July
+                   
+                   
+                    $A.get('e.force:refreshView').fire();
+                } else if (responseVal.errorFlag == false) {
+                   $A.get("e.force:closeQuickAction").fire();
+                    component.set("v.error", false);
+                    component.set("v.DisableButton",true);
+                    console.log('Error flag false', responseVal.errorFlag);
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Success!",
+                        "message": responseVal.errorMessage,
+                        "mode": "sticky",
+                        "type": "success"
+                    });
+                    toastEvent.fire();
+                    //=====================added by kloudrac 06/28/2019
+                    window.location.reload();
+                }
+                component.set("v.Spinner", false);
+               
+            } else {
+                console.log('Check 2');
+                var errors = response.getError();
+                var msg;
+                if (errors) {
+                    if (errors[0] && errors[0].message) {
+                        console.log("Error message: " +
+                                    errors[0].message);
+                        msg = errors[0].message;
+                    }
+                } else {
+                    console.log("Unknown error");
+                    msg = "Unknown error";
+                }
+                var toastEvent = $A.get("e.force:showToast");
+                toastEvent.setParams({
+                    "title": "Error!",
+                    "message": msg,
+                    "mode": "sticky",
+                    "type": "error"
+                });
+                component.set("v.error", true);
+                component.set("v.errorMessage", msg);
+                //  toastEvent.fire(); // Commented by Anant on 2nd July
+                console.log("Failed with state : " + state);
+                component.set("v.Spinner", false);
+                //$A.get("e.force:closeQuickAction").fire();
+            }
+            //$A.get("e.force:closeQuickAction").fire();
+        });
+       
+        $A.enqueueAction(action);
+    },
+   
+    handleExpressoContract: function(component, event, helper, contractId, billableGST) {
+        console.log('Handle handleExpressoContract');
+        component.set("v.Spinner", true);
+        var action = component.get('c.handleExpressoValidation');
+       
+        action.setParams({
+            "billableGST": billableGST,
+            "contractId": contractId,
+            "optyId": component.get("v.recordId")
+        });
+       
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                var responseVal = response.getReturnValue();
+                console.log('handleExpresso response', responseVal);
+                if (responseVal.errorFlag == true) {
+                    component.set("v.error", true);
+                    component.set("v.errorMessage", responseVal.errorMessage);
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message": responseVal.errorMessage,
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    //  toastEvent.fire(); // Commented by Anant on 2nd July
+                } else if (responseVal.errorFlag == false) {
+                    component.set("v.error", false);
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Success!",
+                        "message": responseVal.errorMessage,
+                        "mode": "sticky",
+                        "type": "success"
+                    });
+                    toastEvent.fire();
+                    $A.get("e.force:closeQuickAction").fire();
+                    //=====================added by kloudrac 06/28/2019
+                    window.location.reload();
+                }
+                component.set("v.Spinner", false);
+               
+            } else {
+                console.log('Check 2');
+                var errors = response.getError();
+                var msg;
+                if (errors) {
+                    if (errors[0] && errors[0].message) {
+                        console.log("Error message: " +
+                                    errors[0].message);
+                        msg = errors[0].message;
+                    }
+                } else {
+                    console.log("Unknown error");
+                    msg = "Unknown error";
+                }
+                component.set("v.error", true);
+                component.set("v.errorMessage", msg);
+                var toastEvent = $A.get("e.force:showToast");
+                toastEvent.setParams({
+                    "title": "Error!",
+                    "message": msg,
+                    "mode": "sticky",
+                    "type": "error"
+                });
+                //  toastEvent.fire(); // Commented by Anant on 2nd July
+                console.log("Failed with state : " + state);
+                component.set("v.Spinner", false);
+               
+            }
+           
+        });
+       
+        $A.enqueueAction(action);
+    },
+    // Added by Kloudrac
+    getFieldsvalidation : function(component, event, helper) {
+       
+       
+        var recordid = component.get("v.recordId");
+        //console.log('recordid == '+recordid);
+        var action = component.get('c.getOpptyFieldsvalidation');
+        action.setParams({
+            "recordId": recordid
+        });
+       
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            console.log('state == '+state);
+           
+            if (state === "SUCCESS") {
+                var responseVal = response.getReturnValue();
+                console.log('responseVal == '+responseVal);
+                var stringmsg ='';
+                var stageNameValue = response.getReturnValue().StageName;
+                console.log('stageNameValue == '+stageNameValue);
+                if(stageNameValue == 'Opportunity Identified' || stageNameValue == 'Discussion with Client' || stageNameValue == 'Sent Media Plan' || stageNameValue == 'Sent Media Plan- Positive Response' || stageNameValue == 'Verbal Approval' || stageNameValue == 'Order Creation' || stageNameValue == 'Business Dropped')
+                {
+                    //commented By KSPL (5_08_2019)
+                    /* if(responseVal.Expected_Delivery_Date__c == null || responseVal.Expected_Delivery_Date__c == 'undefined')
+                    {
+                        stringmsg += 'Expected Delivery Date Cannot Be Blank\n';
+                    }
+                   
+                    if(responseVal.Brief_Documented_By__c == null || responseVal.Brief_Documented_By__c == 'undefined')
+                    {
+                        stringmsg += 'Brief Documented By Cannot Be Blank \n';
+                    }*/
+                    if(responseVal.Brand__c == null || responseVal.Brand__c == 'undefined')
+                    {
+                        stringmsg += 'Brand Field Cannot Not Be Blank \n';
+                    }
+                    //commented By KSPL (5_08_2019)
+                    /* if(responseVal.Brief_Submission_Date__c == null || responseVal.Brief_Submission_Date__c == 'undefined')
+                    {
+                        stringmsg += 'Brief Submission Date Cannot Not Be Blank \n';
+                    }
+                    if(responseVal.Campaign_Objective__c == null || responseVal.Campaign_Objective__c == 'undefined')
+                    {
+                        stringmsg += 'Campaign Objective Cannot Be Blank \n';
+                    }
+                    if(responseVal.Target_Audience_Gender__c == null || responseVal.Target_Audience_Gender__c == 'undefined')
+                    {
+                        stringmsg += 'Target Audience - Gender Cannot Be Blank \n';
+                    }
+                    if(responseVal.Target_Audience_Age__c == null || responseVal.Target_Audience_Age__c == 'undefined')
+                    {
+                        stringmsg += 'Target Audience - Age Cannot Be Blank \n';
+                    }
+                    if(responseVal.Brand_Perception_by_Target_Audience__c == null || responseVal.Brand_Perception_by_Target_Audience__c == 'undefined')
+                    {
+                        stringmsg += 'Brand Perception By Target Audience Cannot Be Blank \n';
+                    }
+                    if(responseVal.Duration_Of_The_Plan_Days__c == null || responseVal.Duration_Of_The_Plan_Days__c == 'undefined')
+                    {
+                        stringmsg += 'Duration Of The Plan (Days) Cannot Be Blank \n';
+                    }
+                    if(responseVal.Media_Mix_Discussed_with_the_client__c == null || responseVal.Media_Mix_Discussed_with_the_client__c == 'undefined')
+                    {
+                        stringmsg += 'Media Mix Cannot Be Blank \n';
+                    }
+                    if(responseVal.TIL_Allocated_Budget_Of_The_Campaign__c == null || responseVal.TIL_Allocated_Budget_Of_The_Campaign__c == 'undefined')
+                    {
+                        stringmsg += ' TIL Allocated Budget Of The Campaign Cannot Be Blank \n';
+                    }*/
+                    //===================added By kloudrac(21/08/2019)
+                    //0010w000002XonbAAC//0017F00000W0obZ
+                    if((responseVal.Agency__c !=null && responseVal.Agency__c != 'undefined' && responseVal.Agency__r.Id == '0017F00000w0obZQAQ') && (responseVal.BCCL_Sub_Group__c == null || responseVal.BCCL_Sub_Group__c == 'undefined'))
+                    {
+                        stringmsg += 'BCCL Sub Group Cannot Not Be Blank \n';
+                    }
+                    //68451//2197
+                    if((responseVal.Agency__c !=null && responseVal.Agency__c != 'undefined' && responseVal.Agency__r.Expresso_Id__c !=null && responseVal.Agency__r.Expresso_Id__c == '2197') && (responseVal.Source_By__c == null || responseVal.Source_By__c == 'undefined'))
+                    {
+                        stringmsg += 'Source By field Cannot Not Be Blank \n';
+                    }
+                   
+                    //========================================
+                    console.log('stringmsg == '+stringmsg);
+                    if(stringmsg != null && stringmsg != '')
+                    {
+                        $A.get("e.force:closeQuickAction").fire();
+                        stringmsg = stringmsg.substring(0, stringmsg.length - 2);
+                        var toastEvent = $A.get("e.force:showToast");
+                        toastEvent.setParams({
+                            "title": "Error!",
+                            "message" : stringmsg,
+                            "mode": "sticky",
+                            "type": "error"
+                        });
+                        toastEvent.fire();
+                    }
+                }
+                //===================================Added By Kloudrac (28/06/2019)
+                var AccountSalesIndustry = response.getReturnValue().Account.Account_Sales_Industry__c;
+                var OpportunitySalesIndustry = response.getReturnValue().til_dropdown_elem__c;
+                console.log('AccountSalesIndustry: ' +AccountSalesIndustry+ 'OpportunitySalesIndustry: ' +OpportunitySalesIndustry);
+                if(OpportunitySalesIndustry!=null && OpportunitySalesIndustry!='undefined' &&(AccountSalesIndustry == null||AccountSalesIndustry=='undefined'|| AccountSalesIndustry.indexOf(OpportunitySalesIndustry) == -1))
+                {
+                    $A.get("e.force:closeQuickAction").fire();
+                    var toastEvent = $A.get("e.force:showToast");
+                    toastEvent.setParams({
+                        "title": "Error!",
+                        "message" : 'Only Sales industries that are selected on account can be selected on opportunity',
+                        "mode": "sticky",
+                        "type": "error"
+                    });
+                    toastEvent.fire();
+                }
+                ////======================================================kloudrac Change End
+            }
+        });
+        $A.enqueueAction(action);
+    },
+    getAgencyName:function(component,account,AgencyOnOpportunity)
+    {
+        var action = component.get("c.getAgencyName");
+        action.setParams({
+            accountId:account,
+            AgencyOnOpportunity:AgencyOnOpportunity
+        });
+        action.setCallback(this,function(response){
+            var state = response.getState();
+            console.log('state == '+state);
+            if (state === "SUCCESS")
+            {
+                var FetechedAccount = response.getReturnValue();
+                if(FetechedAccount!=null && FetechedAccount!='undefined')
+                {
+                    component.set("v.IsSingleAgency", true);
+                    component.set("v.selAccountItem2", FetechedAccount.Id);   //if single agency Gst
+                    component.set("v.AgencyName",FetechedAccount.Name);
+                }
+            }
+           
+        });
+        $A.enqueueAction(action);
+       
+    },
+    commonFileReader : function(Files)
+    {
+        var p = new Promise( $A.getCallback( function( resolve , reject ) {
+            var stringFileData = "";
+            console.log("=======>>21=======>>"+JSON.stringify(Files));
+           
+            if(Files != null && Files !=="" && typeof Files !=="undefined" && Files.length>0)
+            {  console.log("=====23=====>>>");
+             var fileResult = {};      
+             for(var i=0;i<Files.length;i++)
+             {
+                 console.log(Files[i].name);
+                 var fileName="";
+                 var fileBody ="";
+                 var fileReader = new FileReader();
+                 fileReader.fileName = Files[i].name;
+                 fileReader.fileType = Files[i].type;
+                 fileReader.onloadend = function(e)
+                 {
+                     try
+                     {
+                         fileName=e.target.fileName;
+                         console.log(fileName);
+                         fileBody = window.btoa(this.result);
+                         fileResult[e.target.fileName] = window.btoa(this.result);
+                         console.log(fileResult);
+                         //if(fileResult.length === Files.length)
+                         //{}
+                         
+                         if(Object.keys(fileResult).length===Files.length)
+                         {stringFileData = JSON.stringify(fileResult);
+                          console.log("=====>>41=====>>"+stringFileData);
+                          resolve(stringFileData);
+                         }
+                         
+                         
+                     }
+                     catch(ex)
+                     {
+                         console.log("EX=====>>"+ex);
+                         reject(ex);
+                     }
+                 }
+                 fileReader.readAsBinaryString(Files[i]);
+                 
+             }
+             
+            }
+            else
+            {
+                resolve(stringFileData);
+            }
+        }));
+        return p;
+    },
+    dateFormat : function(d)
+    {
+        var dd = d.getDate();
+        var mm = d.getMonth()+1;
+        var yyyy = d.getFullYear();
+        if(dd<10)
+        { dd='0'+dd;}
+        if(mm<10)
+        {mm='0'+mm;}
+        return dd+'/'+mm+'/'+yyyy;
+    },
+    FileUploadOnOpp : function(cmp,fileData,recordId)
+    {
+        var p = new Promise( $A.getCallback( function( resolve , reject ) {
+            var insertFileDate = cmp.get("c.insertFileContantVersion");
+            insertFileDate.setParams({"recordId":recordId,"fileData":fileData});
+            insertFileDate.setCallback(this,function(result){
+                if(result.getState()==="SUCCESS")
+                { resolve("SUCCESS");}
+                else
+                {reject("FAIL");}
+            });
+            $A.enqueueAction(insertFileDate);
+        }));
+        return p;
+    },
+    FileUpdateonOpp : function(component,fileName,createdDate)
+    {
+        var p = new Promise( $A.getCallback( function( resolve , reject ) {
+            var insertFileDate = component.get("c.updateContactFileName");
+            insertFileDate.setParams({"recordId":component.get("v.recordId"),"FileName":fileName,"createdDate":new Date(createdDate)});
+            insertFileDate.setCallback(this,function(result){
+                if(result.getState()==="SUCCESS")
+                {  resolve(result.getReturnValue());
+                }
+                else
+                {reject("FAIL");}
+            });
+            $A.enqueueAction(insertFileDate);
+        }));
+        return p;
+    },
+    heplerHandleSave: function(component, event, helper)
+    {
+        var action = component.get('c.saveDetails');
+        var obj = component.get("v.orderJSON");
+        action.setParams({
+            "recordId": component.get("v.recordId"),
+            "orderDetails": JSON.stringify(obj)
+        });
+       
+        action.setCallback(this, function(response) {
+            var state = response.getState();
+            if (state === "SUCCESS") {
+                console.log('Check 1');
+                var responseVal = response.getReturnValue();
+                console.log('Response:', responseVal);
+               
+                if (responseVal.errorFlag == true) {
+                    component.set("v.error", true);
+                    component.set("v.errorMessage", responseVal.errorMessage);
+                    component.set("v.severity", "error");
+                   
+                    component.set("v.Spinner", false);
+                } else {
+                    console.log('Check 2');
+                    //CONTRACT VALIDATION WEB SERVICE CALL//Pallavi 14 June KT
+                    if (component.get("v.IsselfService") != null && component.get("v.IsselfService") != 'undefined' && component.get("v.IsselfService") == true)
+                        helper.handleExpressoContract(component, event, helper, responseVal.contractId, responseVal.billableGST);
+                    //CREATE ORDER WEB SERVICE CALL
+                    else if (component.get("v.IsselfService") != null && component.get("v.IsselfService") != 'undefined' && component.get("v.IsselfService") == false)
+                        helper.handleExpresso(component, event, helper, responseVal.iMId);
+                   
+                }
+               
+            } else {
+                console.log('Check 3');
+                var errors = response.getError();
+                var msg;
+                if (errors) {
+                    if (errors[0] && errors[0].message) {
+                        console.log("Error message: " +
+                                    errors[0].message);
+                        msg = errors[0].message;
+                    }
+                } else {
+                    console.log("Unknown error");
+                    msg = "Unknown error";
+                }
+                component.set("v.error", true);
+                component.set("v.errorMessage", msg);
+                component.set("v.severity", "error");
+                var toastEvent = $A.get("e.force:showToast");
+                toastEvent.setParams({
+                    "title": "Error!",
+                    "message": msg,
+                    "mode": "sticky",
+                    "type": "error"
+                });
+                toastEvent.fire();
+                console.log("Failed with state : " + state);
+                $A.get("e.force:closeQuickAction").fire();
+            }
+        });
+       
+        $A.enqueueAction(action);
+       
+    },
+    dynamicToastErrorOrSuccess: function(title,message,type,event)
+    {
+        var toastEvent = $A.get('e.force:showToast');
+        toastEvent.setParams({
+            "title":title,
+            "type" : type,
+            "message" :message
+           
+        });
+        //$A.get('e.force:refreshView').fire();
+        toastEvent.fire();  
+    },
+    checkRefrenceIdAndBillabeEntry : function(cmp,event)
+    {
+        var p = new Promise( $A.getCallback( function( resolve , reject ) {
+            var actionCheckData = cmp.get("c.getListOfOpportunity");
+            actionCheckData.setParams({"recordId":cmp.get("v.recordId"),"reffrenceId":cmp.get("v.roReference")});
+            actionCheckData.setCallback(this, function(response) {
+                var state = response.getState();
+                if (state === "SUCCESS") {
+                    console.log('==489====',response.getReturnValue());
+                    resolve(response.getReturnValue());
+                }
+                else
+                { reject('Error');}
+               
+            });
+            $A.enqueueAction(actionCheckData);            
+        }));
+        return p;
+    },
+    GetUserProfileName : function(component,event)
+    {
+            var action = component.get("c.ReturnUserProfileName");
+            action.setCallback(this, function(response) {
+                var state = response.getState();
+                if (state === "SUCCESS") {
+                  component.set("v.ProfileName",response.getReturnValue());  
+                }
+                else
+                {
+                    alert('Some error has been occurred, please Contact Salesforce admin.');
+                }
+               
+            });
+            $A.enqueueAction(action);            
+    },
+
+   
+})
+++++++++++++++++++++==
